@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>聽力氣泡大冒險 - Unit 3 🫧</title>
+    <style>
+        :root { --primary: #4A90E2; --secondary: #F5A623; --bg: #FFF9E6; }
+        body { margin: 0; padding: 0; background: var(--bg); font-family: sans-serif; overflow: hidden; touch-action: manipulation; }
+        #ui-layer { position: absolute; top: 20px; width: 100%; text-align: center; z-index: 100; }
+        #btn-speak { padding: 15px 30px; font-size: 24px; border-radius: 50px; border: none; background: var(--primary); color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        #game-canvas { width: 100vw; height: 100vh; position: relative; }
+        .bubble { 
+            position: absolute; width: 140px; height: 140px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9); border: 3px solid var(--secondary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: bold; color: #333;
+            animation: float 5s ease-in-out infinite; cursor: pointer;
+        }
+        @keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(10px, -20px); } }
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; background: rgba(0,0,0,0.85); z-index: 1000; flex-direction: column; }
+        #overlay-text { font-size: 60px; color: white; text-align: center; }
+        #correct-word-tip { font-size: 40px; color: #F5A623; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <button id="btn-speak">🔊 聽聽看是什麼？</button>
+    <div id="progress" style="margin-top:10px; color:#666;">Unit 3 進度: 0 / 0</div>
+</div>
+
+<div id="game-canvas"></div>
+<div id="overlay"><div id="overlay-text"></div><div id="correct-word-tip"></div></div>
+
+<script>
+// --- 【Unit 3 貼膜區：基礎英語單字】 ---
+const gameData = {
+    "lesson_title": "食物與 V/F 發音大挑戰",
+    "targets": [
+        "apple", "banana", "orange", "watermelon", 
+        "hamburger", "hot dog", "sandwich", 
+        "like", "these", "those",
+        "van", "vat", "vet"
+    ],
+    "extraPool": [
+        // 針對 V/F 設計的強效陷阱
+        "fan", "fat", "fun", 
+        // 其他形近或音近陷阱
+        "apply", "bandana", "range", "water", 
+        "ham", "dog", "witch", "lake", "this", "that",
+        "ban", "bat", "fed"
+    ]
+};
+
+let randomizedTargets = [];
+let currentIdx = 0;
+let targetWord = "";
+const canvas = document.getElementById('game-canvas');
+const overlay = document.getElementById('overlay');
+
+function speak(text) {
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = 'en-US';
+    msg.rate = 0.75; // 稍微放慢一點點
+    window.speechSynthesis.speak(msg);
+}
+
+document.getElementById('btn-speak').onclick = () => speak(targetWord);
+
+function startGame() {
+    randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5);
+    currentIdx = 0;
+    initLevel();
+}
+
+function initLevel() {
+    if (currentIdx >= randomizedTargets.length) {
+        showOverlay("🏆 Unit 3 完成!", "你太厲害了！");
+        overlay.onclick = () => location.reload();
+        return;
+    }
+    
+    canvas.innerHTML = "";
+    overlay.style.display = "none";
+    targetWord = randomizedTargets[currentIdx];
+    document.getElementById('progress').innerText = `進度: ${currentIdx + 1} / ${randomizedTargets.length}`;
+    
+    let options = [targetWord];
+    let pool = [...gameData.extraPool].sort(() => Math.random() - 0.5);
+    while(options.length < 3) {
+        let p = pool.pop();
+        if(p && !options.includes(p)) options.push(p);
+    }
+    options.sort(() => Math.random() - 0.5);
+
+    options.forEach((word, i) => {
+        const b = document.createElement('div');
+        b.className = 'bubble';
+        b.innerText = word;
+        b.style.left = (10 + (i * 30)) + "%";
+        b.style.top = (30 + Math.random() * 30) + "%";
+        b.onclick = () => check(word);
+        canvas.appendChild(b);
+    });
+    
+    speak(targetWord);
+}
+
+function check(selected) {
+    if(selected === targetWord) {
+        showOverlay("🎉 太棒了!", "");
+        currentIdx++;
+        setTimeout(initLevel, 1200);
+    } else {
+        showOverlay("❌ 再聽一次", "正確答案是: " + targetWord);
+        speak("Try again. Listen: " + targetWord);
+        setTimeout(() => { overlay.style.display = "none"; }, 1800);
+    }
+}
+
+function showOverlay(msg, tip) {
+    overlay.style.display = "flex";
+    document.getElementById('overlay-text').innerText = msg;
+    document.getElementById('correct-word-tip').innerText = tip;
+}
+
+startGame();
+</script>
+</body>
+</html>
