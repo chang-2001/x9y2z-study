@@ -63,7 +63,14 @@ function speak(text) {
     window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(text);
     msg.lang = 'en-US';
-    msg.rate = 0.75; // 稍微放慢一點點
+    
+    // 試著抓取 Samantha，如果沒有就用預設
+    const voices = window.speechSynthesis.getVoices();
+    const samantha = voices.find(v => v.name.includes('Samantha'));
+    if (samantha) msg.voice = samantha;
+
+    msg.rate = 0.85; // 稍微調快一點點，避免 Mac 的悶音感
+    msg.pitch = 1.0; // 確保音調不被壓低
     window.speechSynthesis.speak(msg);
 }
 
