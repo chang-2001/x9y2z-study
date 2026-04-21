@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Unit 4-1</title>
+    <style>
+        body { margin: 0; background: #FFF9E6; font-family: sans-serif; text-align: center; overflow: hidden; }
+        #btn-speak { margin-top: 40px; padding: 20px 40px; font-size: 30px; border-radius: 50px; border: 8px solid black; background: #FF7675; color: white; font-weight: 900; }
+        .bubble-area { width: 100vw; height: 55vh; position: relative; margin-top: 20px; }
+        .bubble { position: absolute; width: 140px; height: 140px; border-radius: 50%; background: white; border: 6px solid black; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; cursor: pointer; box-shadow: 6px 6px 0px rgba(0,0,0,0.1); }
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; background: white; z-index: 1000; flex-direction: column; }
+        .nav-btn { padding: 15px 30px; font-size: 24px; font-weight: 900; border: 5px solid black; margin: 10px; cursor: pointer; background: white; text-decoration: none; color: black; }
+    </style>
+</head>
+<body>
+    <button id="btn-speak">📢 LISTEN</button>
+    <div id="progress" style="margin-top:10px; font-weight:bold;">Progress: 0/0</div>
+    <div class="bubble-area" id="canvas"></div>
+    <div id="overlay">
+        <h1 id="f-text" style="font-size:60px; font-weight:900;"></h1>
+        <div id="finish-ctrl" style="display:none;">
+            <button class="nav-btn" onclick="location.reload()">🔄 RESTART</button>
+            <a href="index.html" class="nav-btn">🏠 HOME</a>
+        </div>
+    </div>
+<script>
+const gameData = {
+    "targets": ["cake", "ice cream", "juice", "milk", "mix", "pizza", "rice", "six", "some", "tea", "want", "water", "wig", "win", "zip", "zit"],
+    "extraPool": ["sun", "bed", "big", "cat"]
+};
+let randomizedTargets = [], currentIdx = 0, targetWord = "";
+function speak(t) {
+    window.speechSynthesis.cancel();
+    const m = new SpeechSynthesisUtterance(t);
+    m.lang = 'en-US'; m.rate = 0.8;
+    const vs = window.speechSynthesis.getVoices();
+    const v = vs.find(v => v.name.includes('Samantha')) || vs.find(v => v.name.includes('Siri'));
+    if (v) m.voice = v;
+    window.speechSynthesis.speak(m);
+}
+document.getElementById('btn-speak').onclick = () => speak(targetWord);
+function initLevel() {
+    if (currentIdx >= randomizedTargets.length) {
+        document.getElementById('f-text').innerText = "🏆 UNIT 4-1 CLEAR!";
+        document.getElementById('finish-ctrl').style.display = "block";
+        document.getElementById('overlay').style.display = "flex";
+        return;
+    }
+    targetWord = randomizedTargets[currentIdx];
+    document.getElementById('progress').innerText = `Progress: ${currentIdx + 1}/${randomizedTargets.length}`;
+    let opts = [targetWord];
+    let pool = [...gameData.extraPool, ...gameData.targets].filter(w => w !== targetWord).sort(() => Math.random() - 0.5);
+    while(opts.length < 3) opts.push(pool.pop());
+    opts.sort(() => Math.random() - 0.5);
+    const cvs = document.getElementById('canvas'); cvs.innerHTML = "";
+    opts.forEach((word, i) => {
+        const b = document.createElement('div'); b.className = 'bubble'; b.innerText = word;
+        b.style.left = (5 + (i * 32)) + "%"; b.style.top = (10 + Math.random() * 25) + "%";
+        b.onclick = () => { if(word === targetWord) showSuccess(word); else speak("Try again"); };
+        cvs.appendChild(b);
+    });
+    speak(targetWord);
+}
+function showSuccess(w) {
+    const fb = document.getElementById('overlay'); document.getElementById('f-text').innerText = w;
+    fb.style.display = "flex"; speak(w);
+    setTimeout(() => { if(currentIdx < randomizedTargets.length-1){ fb.style.display = "none"; } currentIdx++; initLevel(); }, 1200);
+}
+window.speechSynthesis.onvoiceschanged = () => { if(!randomizedTargets.length) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); } };
+if (window.speechSynthesis.getVoices().length > 0) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); }
+</script>
+</body>
+</html>

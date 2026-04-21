@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Unit 4-2</title>
+    <style>
+        body { margin: 0; background: #F0F2F5; font-family: sans-serif; text-align: center; overflow: hidden; }
+        #image-container { width: 260px; height: 260px; margin: 20px auto; background: white; border: 10px solid black; display: flex; align-items: center; justify-content: center; box-shadow: 10px 10px 0px #DDD; }
+        #target-img { max-width: 90%; max-height: 90%; }
+        .bubble-area { width: 100vw; height: 40vh; position: relative; }
+        .bubble { position: absolute; width: 140px; height: 140px; border-radius: 50%; background: white; border: 6px solid black; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; cursor: pointer; box-shadow: 6px 6px 0px rgba(0,0,0,0.1); }
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; justify-content: center; align-items: center; background: white; z-index: 2000; flex-direction: column; }
+        #f-img-box { border: 10px solid black; padding: 15px; background: white; margin-bottom: 20px; }
+        #f-img { width: 220px; height: 220px; object-fit: contain; }
+        #f-text { font-size: 70px; font-weight: 900; text-transform: uppercase; margin: 0; border-bottom: 10px solid black; }
+        .nav-btn { padding: 15px 30px; font-size: 24px; font-weight: 900; border: 5px solid black; margin: 10px; cursor: pointer; background: white; text-decoration: none; color: black; }
+    </style>
+</head>
+<body>
+    <div id="image-container"><img id="target-img" src=""></div>
+    <div class="bubble-area" id="bubble-area"></div>
+    <div id="overlay">
+        <div id="f-img-box"><img id="f-img" src=""></div>
+        <h1 id="f-text"></h1>
+        <div id="finish-ctrl" style="display:none; margin-top:20px;">
+            <button class="nav-btn" onclick="location.reload()">🔄 RESTART</button>
+            <a href="index.html" class="nav-btn">🏠 HOME</a>
+        </div>
+    </div>
+<script>
+const IMAGE_PATH = "images/";
+const gameData = { "targets": ["cake", "ice cream", "juice", "milk", "mix", "pizza", "rice", "six", "some", "tea", "want", "water", "wig", "win", "zip", "zit"], "extraPool": ["six", "big", "win"] };
+function getFileName(word) { return IMAGE_PATH + word.toLowerCase().replace(" ", "_") + ".png"; }
+function speak(t) { window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t); m.lang = 'en-US'; m.rate = 0.8; const vs = window.speechSynthesis.getVoices(); const v = vs.find(v => v.name.includes('Samantha')) || vs.find(v => v.name.includes('Siri')); if (v) m.voice = v; window.speechSynthesis.speak(m); }
+let randomizedTargets = [], currentIdx = 0;
+function initLevel() {
+    if (currentIdx >= randomizedTargets.length) {
+        document.getElementById('f-img-box').style.display = "none";
+        document.getElementById('f-text').innerText = "🏆 UNIT 4-2 DONE!";
+        document.getElementById('finish-ctrl').style.display = "block";
+        document.getElementById('overlay').style.display = "flex";
+        return;
+    }
+    const t = randomizedTargets[currentIdx];
+    document.getElementById('target-img').src = getFileName(t); 
+    let opts = [t];
+    let pool = [...gameData.extraPool, ...gameData.targets].filter(w => w !== t).sort(() => Math.random() - 0.5);
+    while(opts.length < 3) opts.push(pool.pop());
+    opts.sort(() => Math.random() - 0.5);
+    const area = document.getElementById('bubble-area'); area.innerHTML = "";
+    opts.forEach((word, i) => {
+        const b = document.createElement('div'); b.className = 'bubble'; b.innerText = word;
+        b.style.left = (5 + (i * 32)) + "%"; b.style.top = "10%";
+        b.onclick = () => { if(word === t) showSuccess(word); else speak("Try again"); };
+        area.appendChild(b);
+    });
+}
+function showSuccess(w) {
+    const fb = document.getElementById('overlay'); document.getElementById('f-img').src = getFileName(w);
+    document.getElementById('f-text').innerText = w; fb.style.display = "flex"; speak(w);
+    setTimeout(() => { if(currentIdx < randomizedTargets.length-1) fb.style.display = "none"; currentIdx++; initLevel(); }, 1500);
+}
+window.speechSynthesis.onvoiceschanged = () => { if(!randomizedTargets.length) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); } };
+if (window.speechSynthesis.getVoices().length > 0) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); }
+</script>
+</body>
+</html>
