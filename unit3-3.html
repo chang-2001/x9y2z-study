@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Unit 3-3</title>
+    <style>
+        body { margin: 0; padding: 0; background: #FFF; font-family: sans-serif; text-align: center; }
+        #btn-speak { margin: 30px auto; padding: 15px 40px; font-size: 28px; background: black; color: white; border: none; border-radius: 50px; font-weight: bold; }
+        #option-container { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; padding: 10px; }
+        .img-option { width: 160px; height: 160px; background: white; border: 8px solid black; padding: 10px; cursor: pointer; box-shadow: 6px 6px 0px #DDD; }
+        .img-option img { max-width: 100%; max-height: 100%; }
+        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:2000; }
+        .nav-btn { padding: 15px 30px; font-size: 24px; font-weight: 900; border: 5px solid black; margin: 10px; cursor: pointer; background: white; text-decoration: none; color: black; }
+    </style>
+</head>
+<body>
+    <button id="btn-speak">📢 LISTEN</button>
+    <div id="option-container"></div>
+    <div id="overlay">
+        <div id="f-box" style="border:10px solid black; padding:20px; display:none;"><img id="f-img" src="" style="width:200px;"></div>
+        <h1 id="f-word" style="font-size:70px; font-weight:900; text-transform:uppercase; margin:20px 0;"></h1>
+        <div id="finish-ctrl" style="display:none;">
+            <button class="nav-btn" onclick="location.reload()">🔄 RESTART</button>
+            <a href="index.html" class="nav-btn">🏠 HOME</a>
+        </div>
+    </div>
+
+<script>
+const IMAGE_PATH = "images/";
+const gameData = { "targets": ["apple", "banana", "orange", "watermelon", "hamburger", "hot dog", "sandwich", "van", "vat", "vet"], "extraPool": ["fan", "fat", "fun"] };
+
+function getFileName(word) { return IMAGE_PATH + word.toLowerCase().replace(" ", "_") + ".png"; }
+
+// --- 語音優化：優先抓取 Samantha ---
+function speak(text) {
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = 'en-US';
+    msg.rate = 0.8;
+    const voices = window.speechSynthesis.getVoices();
+    const bestVoice = voices.find(v => v.name.includes('Samantha')) || voices.find(v => v.name.includes('Siri'));
+    if (bestVoice) msg.voice = bestVoice;
+    window.speechSynthesis.speak(msg);
+}
+
+let randomizedTargets = [], currentIdx = 0, currentTarget = "";
+document.getElementById('btn-speak').onclick = () => speak(currentTarget);
+
+function initLevel() {
+    if (currentIdx >= randomizedTargets.length) {
+        document.getElementById('f-word').innerText = "🏆 GREAT JOB!";
+        document.getElementById('f-box').style.display = "none";
+        document.getElementById('finish-ctrl').style.display = "block";
+        document.getElementById('overlay').style.display = "flex";
+        return;
+    }
+    currentTarget = randomizedTargets[currentIdx];
+    let opts = [currentTarget];
+    let pool = [...gameData.extraPool, ...gameData.targets].filter(w => w !== currentTarget).sort(() => Math.random() - 0.5);
+    while(opts.length < 3) opts.push(pool.pop());
+    opts.sort(() => Math.random() - 0.5);
+
+    const container = document.getElementById('option-container'); container.innerHTML = "";
+    opts.forEach(word => {
+        const div = document.createElement('div'); div.className = 'img-option';
+        const img = document.createElement('img'); img.src = getFileName(word);
+        div.appendChild(img);
+        div.onclick = () => { if(word === currentTarget) showSuccess(word); else speak("Try again"); };
+        container.appendChild(div);
+    });
+    speak(currentTarget);
+}
+
+function showSuccess(w) {
+    const fb = document.getElementById('overlay'); 
+    document.getElementById('f-img').src = getFileName(w);
+    document.getElementById('f-word').innerText = w; 
+    document.getElementById('f-box').style.display = "block";
+    fb.style.display = "flex"; speak(w);
+    setTimeout(() => { if(currentIdx < randomizedTargets.length-1) fb.style.display = "none"; currentIdx++; initLevel(); }, 1500);
+}
+
+window.speechSynthesis.onvoiceschanged = () => { if(!randomizedTargets.length) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); } };
+if (window.speechSynthesis.getVoices().length > 0) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); }
+</script>
+</body>
+</html>
