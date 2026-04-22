@@ -32,15 +32,28 @@ const gameData = { "targets": ["apple", "banana", "orange", "watermelon", "hambu
 
 function getFileName(word) { return IMAGE_PATH + word.toLowerCase().replace(" ", "_") + ".png"; }
 
-// --- 語音優化：優先抓取 Samantha ---
+// --- 強固型語音模組：確保平板絕對有聲音 ---
 function speak(text) {
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel(); // 清空發音隊列
     const msg = new SpeechSynthesisUtterance(text);
     msg.lang = 'en-US';
     msg.rate = 0.8;
+
     const voices = window.speechSynthesis.getVoices();
-    const bestVoice = voices.find(v => v.name.includes('Samantha')) || voices.find(v => v.name.includes('Siri'));
-    if (bestVoice) msg.voice = bestVoice;
+    
+    // 優先順序：Samantha > Siri > 任何英文聲音 > 系統預設
+    const samantha = voices.find(v => v.name.includes('Samantha'));
+    const siri = voices.find(v => v.name.includes('Siri'));
+    const anyEnglish = voices.find(v => v.lang.startsWith('en'));
+
+    if (samantha) {
+        msg.voice = samantha;
+    } else if (siri) {
+        msg.voice = siri;
+    } else if (anyEnglish) {
+        msg.voice = anyEnglish;
+    }
+
     window.speechSynthesis.speak(msg);
 }
 
@@ -77,12 +90,33 @@ function showSuccess(w) {
     document.getElementById('f-img').src = getFileName(w);
     document.getElementById('f-word').innerText = w; 
     document.getElementById('f-box').style.display = "block";
-    fb.style.display = "flex"; speak(w);
-    setTimeout(() => { if(currentIdx < randomizedTargets.length-1) fb.style.display = "none"; currentIdx++; initLevel(); }, 1500);
+    fb.style.display = "flex"; 
+    
+    speak(w); // 答對即時唸出來
+    
+    setTimeout(() => { 
+        if(currentIdx < randomizedTargets.length-1) fb.style.display = "none"; 
+        currentIdx++; 
+        initLevel(); 
+    }, 1500);
 }
 
-window.speechSynthesis.onvoiceschanged = () => { if(!randomizedTargets.length) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); } };
-if (window.speechSynthesis.getVoices().length > 0) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); }
+// 監聽語音載入事件
+window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices();
+    if(!randomizedTargets.length) { 
+        randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); 
+        initLevel(); 
+    } 
+};
+
+// 進入時嘗試啟動
+if (window.speechSynthesis.getVoices().length > 0) { 
+    if(!randomizedTargets.length) {
+        randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); 
+        initLevel(); 
+    }
+}
 </script>
 </body>
 </html>
