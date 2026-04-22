@@ -30,17 +30,36 @@ const gameData = {
     "targets": ["apple", "banana", "orange", "watermelon", "hamburger", "hot dog", "sandwich", "like", "these", "those", "van", "vat", "vet"],
     "extraPool": ["fan", "fat", "fun"]
 };
+
 let randomizedTargets = [], currentIdx = 0, targetWord = "";
+
+// --- 強固版語音模組 ---
 function speak(t) {
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel(); // 先清空發音隊列
     const m = new SpeechSynthesisUtterance(t);
-    m.lang = 'en-US'; m.rate = 0.8;
+    m.lang = 'en-US'; 
+    m.rate = 0.8;
+
     const vs = window.speechSynthesis.getVoices();
-    const v = vs.find(v => v.name.includes('Samantha')) || vs.find(v => v.name.includes('Siri'));
-    if (v) m.voice = v;
+    
+    // 優先順序：Samantha > Siri > 任何英文聲音 > 系統預設
+    const samantha = vs.find(v => v.name.includes('Samantha'));
+    const siri = vs.find(v => v.name.includes('Siri'));
+    const anyEnglish = vs.find(v => v.lang.startsWith('en'));
+
+    if (samantha) {
+        m.voice = samantha;
+    } else if (siri) {
+        m.voice = siri;
+    } else if (anyEnglish) {
+        m.voice = anyEnglish;
+    }
+    
     window.speechSynthesis.speak(m);
 }
+
 document.getElementById('btn-speak').onclick = () => speak(targetWord);
+
 function initLevel() {
     if (currentIdx >= randomizedTargets.length) {
         document.getElementById('f-text').innerText = "🏆 WELL DONE!";
@@ -50,10 +69,12 @@ function initLevel() {
     }
     targetWord = randomizedTargets[currentIdx];
     document.getElementById('progress').innerText = `Progress: ${currentIdx + 1}/${randomizedTargets.length}`;
+    
     let opts = [targetWord];
     let pool = [...gameData.extraPool, ...gameData.targets].filter(w => w !== targetWord).sort(() => Math.random() - 0.5);
     while(opts.length < 3) opts.push(pool.pop());
     opts.sort(() => Math.random() - 0.5);
+    
     const cvs = document.getElementById('canvas'); cvs.innerHTML = "";
     opts.forEach((word, i) => {
         const b = document.createElement('div'); b.className = 'bubble'; b.innerText = word;
@@ -61,14 +82,38 @@ function initLevel() {
         b.onclick = () => { if(word === targetWord) showSuccess(word); else speak("Try again"); };
         cvs.appendChild(b);
     });
+    
     speak(targetWord);
 }
+
 function showSuccess(w) {
     const fb = document.getElementById('overlay'); document.getElementById('f-text').innerText = w;
-    fb.style.display = "flex"; speak(w);
-    setTimeout(() => { if(currentIdx < randomizedTargets.length-1){ fb.style.display = "none"; } currentIdx++; initLevel(); }, 1200);
+    fb.style.display = "flex"; 
+    speak(w);
+    
+    setTimeout(() => { 
+        if(currentIdx < randomizedTargets.length-1){ fb.style.display = "none"; } 
+        currentIdx++; 
+        initLevel(); 
+    }, 1200);
 }
-window.speechSynthesis.onvoiceschanged = () => { if(!randomizedTargets.length) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); } };
+
+// 語音載入監聽：確保平板環境下載入後才啟動遊戲
+window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices(); // 觸發清單刷新
+    if(!randomizedTargets.length) { 
+        randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); 
+        initLevel(); 
+    } 
+};
+
+// 進入時嘗試初始化（若語音已就緒）
+if (window.speechSynthesis.getVoices().length > 0) { 
+    if(!randomizedTargets.length) {
+        randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); 
+        initLevel(); 
+    }
+}
 </script>
 </body>
 </html>
