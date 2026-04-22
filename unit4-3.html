@@ -28,10 +28,37 @@
 <script>
 const IMAGE_PATH = "images/";
 const gameData = { "targets": ["cake", "ice cream", "juice", "milk", "mix", "pizza", "rice", "six", "some", "tea", "want", "water", "wig", "win", "zip", "zit"], "extraPool": ["six", "big", "win"] };
+
 function getFileName(word) { return IMAGE_PATH + word.toLowerCase().replace(" ", "_") + ".png"; }
-function speak(t) { window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t); m.lang = 'en-US'; m.rate = 0.8; const vs = window.speechSynthesis.getVoices(); const v = vs.find(v => v.name.includes('Samantha')) || vs.find(v => v.name.includes('Siri')); if (v) m.voice = v; window.speechSynthesis.speak(m); }
+
+// --- 強固型語音模組：確保平板環境下穩定發聲 ---
+function speak(t) { 
+    window.speechSynthesis.cancel(); // 清空目前的發音序列
+    const m = new SpeechSynthesisUtterance(t); 
+    m.lang = 'en-US'; 
+    m.rate = 0.8; 
+    
+    const vs = window.speechSynthesis.getVoices(); 
+    
+    // 選音優先權：Samantha -> Siri -> 任何英文語音 -> 系統預設
+    const samantha = vs.find(v => v.name.includes('Samantha'));
+    const siri = vs.find(v => v.name.includes('Siri'));
+    const anyEnglish = vs.find(v => v.lang.startsWith('en'));
+
+    if (samantha) {
+        m.voice = samantha;
+    } else if (siri) {
+        m.voice = siri;
+    } else if (anyEnglish) {
+        m.voice = anyEnglish;
+    }
+    
+    window.speechSynthesis.speak(m); 
+}
+
 let randomizedTargets = [], currentIdx = 0, currentTarget = "";
 document.getElementById('btn-speak').onclick = () => speak(currentTarget);
+
 function initLevel() {
     if (currentIdx >= randomizedTargets.length) {
         document.getElementById('f-word').innerText = "🏆 UNIT 4-3 CLEAR!";
@@ -45,6 +72,7 @@ function initLevel() {
     let pool = [...gameData.extraPool, ...gameData.targets].filter(w => w !== currentTarget).sort(() => Math.random() - 0.5);
     while(opts.length < 3) opts.push(pool.pop());
     opts.sort(() => Math.random() - 0.5);
+
     const container = document.getElementById('option-container'); container.innerHTML = "";
     opts.forEach(word => {
         const div = document.createElement('div'); div.className = 'img-option';
@@ -55,14 +83,39 @@ function initLevel() {
     });
     speak(currentTarget);
 }
+
 function showSuccess(w) {
-    const fb = document.getElementById('overlay'); document.getElementById('f-img').src = getFileName(w);
-    document.getElementById('f-word').innerText = w; document.getElementById('f-box').style.display = "block";
-    fb.style.display = "flex"; speak(w);
-    setTimeout(() => { if(currentIdx < randomizedTargets.length-1) fb.style.display = "none"; currentIdx++; initLevel(); }, 1500);
+    const fb = document.getElementById('overlay'); 
+    document.getElementById('f-img').src = getFileName(w);
+    document.getElementById('f-word').innerText = w; 
+    document.getElementById('f-box').style.display = "block";
+    fb.style.display = "flex"; 
+    
+    speak(w); // 答對時即刻發音
+    
+    setTimeout(() => { 
+        if(currentIdx < randomizedTargets.length-1) fb.style.display = "none"; 
+        currentIdx++; 
+        initLevel(); 
+    }, 1500);
 }
-window.speechSynthesis.onvoiceschanged = () => { if(!randomizedTargets.length) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); } };
-if (window.speechSynthesis.getVoices().length > 0) { randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); initLevel(); }
+
+// 監聽語音清單變更：確保設備端載入後才初始化遊戲
+window.speechSynthesis.onvoiceschanged = () => { 
+    window.speechSynthesis.getVoices(); // 觸發清單刷新
+    if(!randomizedTargets.length) { 
+        randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); 
+        initLevel(); 
+    } 
+};
+
+// 啟動嘗試
+if (window.speechSynthesis.getVoices().length > 0) { 
+    if(!randomizedTargets.length) {
+        randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5); 
+        initLevel(); 
+    }
+}
 </script>
 </body>
 </html>
