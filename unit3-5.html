@@ -19,13 +19,22 @@
 
         .sentence-box { font-size: 36px; font-weight: bold; margin: 20px 0; }
         .highlight-word { color: #007bff; font-weight: 900; }
-        .plural-s { color: red; font-weight: 900; text-decoration: underline; }
         
+        /* 視覺強化標籤 */
+        .plural-s { color: red; font-weight: 900; text-decoration: underline; }
+        .article-a { color: #FF8C00; font-weight: 900; } /* 橘色標註 a/an */
+
         .options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 600px; margin: 0 auto; }
         button { padding: 18px; font-size: 24px; cursor: pointer; background-color: #b3e5fc; border: 3px solid #333; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 0 #333; transition: 0.1s; }
         button:active { transform: translateY(4px); box-shadow: none; }
         
         .hint { font-size: 22px; margin-top: 15px; font-weight: bold; height: 35px; }
+        
+        @keyframes flash {
+            0% { background-color: #b3e5fc; }
+            50% { background-color: #2ecc71; color: white; }
+            100% { background-color: #b3e5fc; }
+        }
     </style>
 </head>
 <body>
@@ -56,23 +65,27 @@
 </div>
 
 <script>
-// 強制指定圖片目錄
 const IMG_DIR = "images/";
 
-// 核心資料修正：根據你提供的 apple_s / apple 規則
+// 橘色 a/an, 紅色 s/es
 const rawData = [
-    { bg: 'this.png', item: 'apple_s.png', obj: 'an apple', ans: 'This is', dist: 'near', isPlural: false, htmlObj: 'an apple' },
-    { bg: 'that.png', item: 'apple_s.png', obj: 'an apple', ans: 'That is', dist: 'far', isPlural: false, htmlObj: 'an apple' },
-    { bg: 'this.png', item: 'apple.png', obj: 'apples', ans: 'These are', dist: 'near', isPlural: true, htmlObj: 'apple<span class="plural-s">s</span>' },
+    { bg: 'this.png', item: 'apple_s.png', obj: 'an apple', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">an</span> apple' },
     { bg: 'that.png', item: 'apple.png', obj: 'apples', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'apple<span class="plural-s">s</span>' },
-    { bg: 'this.png', item: 'orange_s.png', obj: 'an orange', ans: 'This is', dist: 'near', isPlural: false, htmlObj: 'an orange' },
-    { bg: 'that.png', item: 'oranges.png', obj: 'oranges', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'orange<span class="plural-s">s</span>' }
+    { bg: 'this.png', item: 'orange_s.png', obj: 'an orange', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">an</span> orange' },
+    { bg: 'that.png', item: 'oranges.png', obj: 'oranges', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'orange<span class="plural-s">s</span>' },
+    { bg: 'this.png', item: 'hamburger.png', obj: 'a hamburger', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">a</span> hamburger' },
+    { bg: 'that.png', item: 'hamburgers.png', obj: 'hamburgers', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'hamburger<span class="plural-s">s</span>' },
+    { bg: 'this.png', item: 'hot_dog.png', obj: 'a hot dog', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">a</span> hot dog' },
+    { bg: 'that.png', item: 'hot_dogs.png', obj: 'hot dogs', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'hot dog<span class="plural-s">s</span>' },
+    { bg: 'this.png', item: 'pizza.png', obj: 'a pizza', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">a</span> pizza' },
+    { bg: 'that.png', item: 'pizzas.png', obj: 'pizzas', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'pizza<span class="plural-s">s</span>' },
+    { bg: 'this.png', item: 'sandwich.png', obj: 'a sandwich', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">a</span> sandwich' },
+    { bg: 'that.png', item: 'sandwiches.png', obj: 'sandwiches', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'sandwich<span class="plural-s">es</span>' }
 ];
 
 let quizData = [];
 let current = 0;
 
-// 強固版語音 (Samantha 優先)
 function speak(text) {
     window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(text);
@@ -86,7 +99,7 @@ function speak(text) {
 
 function restartGame() {
     current = 0;
-    quizData = [...rawData].sort(() => Math.random() - 0.5);
+    quizData = [...rawData].sort(() => Math.random() - 0.5).slice(0, 8); // 每次隨機挑 8 題才不會太長
     document.getElementById('gameScreen').style.display = 'block';
     document.getElementById('resultScreen').style.display = 'none';
     showQuestion();
@@ -116,7 +129,7 @@ function check(choice) {
     } else {
         speak("Try again");
         correctBtn.style.animation = "none";
-        void correctBtn.offsetWidth; // 觸發重繪
+        void correctBtn.offsetWidth;
         correctBtn.style.animation = "flash 0.5s 2";
         
         hintEl.style.color = (item.dist === 'near') ? "#007bff" : "#28a745";
@@ -128,22 +141,13 @@ function showQuestion() {
     const item = quizData[current];
     document.getElementById('bgImg').src = IMG_DIR + item.bg;
     document.getElementById('itemImg').src = IMG_DIR + item.item;
+    // 初始顯示不標顏色，答對後才揭曉完整結構
     document.getElementById('sentence').innerHTML = `______ ${item.obj}.`;
     document.getElementById('hint').innerText = "";
 }
 
-// 語音初始化監聽
-window.speechSynthesis.onvoiceschanged = () => {
-    if (quizData.length === 0) restartGame();
-};
-
-window.onload = () => {
-    if (window.speechSynthesis.getVoices().length > 0) {
-        if (quizData.length === 0) restartGame();
-    } else {
-        restartGame();
-    }
-};
+window.speechSynthesis.onvoiceschanged = () => { if (quizData.length === 0) restartGame(); };
+window.onload = () => { if (quizData.length === 0) restartGame(); };
 </script>
 </body>
 </html>
