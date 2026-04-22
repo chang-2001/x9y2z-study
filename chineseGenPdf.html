@@ -15,50 +15,69 @@
 
         #paper-container { display: flex; justify-content: center; padding: 20px; }
         .page {
-            background: white; width: 277mm; height: 190mm; padding: 10mm; box-sizing: border-box;
+            background: white; width: 277mm; height: 200mm; padding: 10mm; box-sizing: border-box;
             writing-mode: vertical-rl; column-count: 2; column-fill: auto;
             column-rule: 1.5pt solid #000; column-gap: 15mm;
         }
         .header { border-left: 5px double #000; padding-left: 10px; margin-left: 25px; }
-        .title { font-size: 26pt; font-weight: bold; }
-        .content { font-size: 18pt; line-height: 3.0; text-align: justify; }
+        .title { font-size: 20pt; font-weight: bold; }
+        .content { font-size: 16pt; line-height: 3; text-align: justify; }
         .type-title { font-size: 18pt; font-weight: bold; border: 1.5pt solid #000; padding: 5px 0; margin-left: 15px; display: inline-block; break-inside: avoid; }
-
+/* 僅讓半形數字正立的樣式 */
+.only-num-upright {
+    text-orientation: upright;
+    display: inline-block;
+    vertical-align: middle; /* 修正對齊中線 */
+    margin: 0 -1px; /* 稍微縮小與括號的間距 */
+    font-family: Arial, sans-serif; /* 半形數字建議換成無襯線字體較美觀 */
+}
         .char-unit { 
-            display: inline-block; 
-            vertical-align: middle; 
-            margin: 0 2px;
-            width: 3.2em;
-            writing-mode: horizontal-tb; 
-        }
-        .main-box { 
-            width: 2.2em; height: 2.2em; 
-            border: 1.5pt solid #000; 
-            display: inline-flex; align-items: center; justify-content: center; 
-            font-size: 18pt; float: right; 
-        }
-        .side-box { 
-            width: 0.9em;
-            min-height: 2.2em;
-            border-left: 1pt solid #000; 
-            display: inline-block; 
-            font-size: 11pt; float: right; 
-            line-height: 1.1;
-            writing-mode: vertical-rl;
-            text-orientation: upright;
-            padding-top: 2px;
-            text-align: center;
-            position: relative; /* 關鍵：讓聲調以此為基準定位 */
-        }
-        
-        .tone-mark {
-            position: absolute;
-            right: -0.5em; /* 貼在注音右側 */
-            top: 0.7em;    /* 約在第一個符號右方 */
-            font-size: 9pt;
-            writing-mode: vertical-rl;
-        }
+    display: inline-flex; /* 改用 flex 讓內部元件並排 */
+    flex-direction: row-reverse; /* 讓注音在右，框在左 */
+    align-items: flex-start; /* 頂端對齊 */
+    margin: 0 2px;
+    width: 3.2em;
+    writing-mode: horizontal-tb; 
+    vertical-align: middle;
+}
 
+.main-box { 
+    width: 2.2em; 
+    height: 2.2em; 
+    border: 1.5pt solid #000; 
+    display: flex; /* 改用 flex 居中文字 */
+    align-items: center; 
+    justify-content: center; 
+    font-size: 18pt;
+    box-sizing: border-box; /* 確保邊框不撐大盒子 */
+}
+
+.side-box { 
+    width: 1.1em; /* 稍微加寬 0.2em，確保 4 個符號有足夠空間 */
+    height: 2.2em; 
+    border-left: 1pt solid #000; 
+    display: flex; 
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 11pt; 
+    line-height: 0.9; /* 縮小行高，讓 3 個注音符號擠在 2.2em 內不溢出 */
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    position: relative;
+    box-sizing: border-box;
+    white-space: nowrap; /* 強制不換行 */
+}
+
+/* 聲調定位微調，確保 4 個字時不會重疊 */
+.tone-mark {
+    position: absolute;
+    right: -0.45em; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    font-size: 9pt;
+    writing-mode: vertical-rl;
+}
         .blank-line { color: #000; letter-spacing: 2px; line-height: 1.2; margin-bottom: 30px; display: block; border-bottom: 1px dashed #999; padding-bottom: 5px; }
         .question-line { display: block; margin-bottom: 10px; }
         .phonetic { font-size: 14pt; vertical-align: super; }
@@ -134,6 +153,10 @@ function generate() {
         // 處理括號內的注音顯示
         processedLine = processedLine.replace(/[（\(]([ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦㄧㄨㄩˊˇˋ˙ ]+)[）\)]/g, 
             '<span class="phonetic">（$1）</span>');
+
+// 在 generate() 函數內加入這一行
+// 它會尋找括號內的數字，並只對數字部分包覆標籤
+processedLine = processedLine.replace(/\(([0-9]+)\)/g, '(<span class="only-num-upright">$1</span>)');
 
         // 造句邏輯：若在造句大題且行內有括號，生成空白練習行
         if (isGrammarMode && (processedLine.includes('(') || processedLine.includes('（'))) {
