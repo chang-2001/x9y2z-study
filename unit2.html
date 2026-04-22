@@ -47,25 +47,37 @@ let currentIdx = 0;
 let targetWord = "";
 const canvas = document.getElementById('game-canvas');
 const overlay = document.getElementById('overlay');
+
+// --- 強固版語音模組 ---
 function speak(text) {
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel(); // 先清空發音隊列
     const msg = new SpeechSynthesisUtterance(text);
     msg.lang = 'en-US';
-    
-    // 試著抓取 Samantha，如果沒有就用預設
-    const voices = window.speechSynthesis.getVoices();
-    const samantha = voices.find(v => v.name.includes('Samantha'));
-    if (samantha) msg.voice = samantha;
+    msg.rate = 0.85; 
+    msg.pitch = 1.0; 
 
-    msg.rate = 0.85; // 稍微調快一點點，避免 Mac 的悶音感
-    msg.pitch = 1.0; // 確保音調不被壓低
+    const voices = window.speechSynthesis.getVoices();
+    
+    // 優先順序：Samantha > Siri > 任何英文聲音 > 系統預設
+    const samantha = voices.find(v => v.name.includes('Samantha'));
+    const siri = voices.find(v => v.name.includes('Siri'));
+    const anyEnglish = voices.find(v => v.lang.startsWith('en'));
+
+    if (samantha) {
+        msg.voice = samantha;
+    } else if (siri) {
+        msg.voice = siri;
+    } else if (anyEnglish) {
+        msg.voice = anyEnglish;
+    }
+
     window.speechSynthesis.speak(msg);
 }
 
 document.getElementById('btn-speak').onclick = () => speak(targetWord);
 
 function startGame() {
-    // 這裡就是關鍵：每次開始都把題目洗牌
+    // 每次開始都把題目洗牌
     randomizedTargets = [...gameData.targets].sort(() => Math.random() - 0.5);
     currentIdx = 0;
     initLevel();
@@ -74,7 +86,6 @@ function startGame() {
 function initLevel() {
     if (currentIdx >= randomizedTargets.length) {
         showOverlay("🏆 挑戰成功!", "太棒了，你全部都聽懂了！");
-        // 點擊慶祝畫面後重新開始
         overlay.onclick = () => location.reload();
         return;
     }
@@ -96,7 +107,6 @@ function initLevel() {
         const b = document.createElement('div');
         b.className = 'bubble';
         b.innerText = word;
-        // 隨機分佈位置
         b.style.left = (10 + (i * 30) + (Math.random() * 5)) + "%";
         b.style.top = (30 + Math.random() * 30) + "%";
         b.style.animationDelay = (Math.random() * 2) + "s";
@@ -125,8 +135,23 @@ function showOverlay(msg, tip) {
     document.getElementById('correct-word-tip').innerText = tip;
 }
 
-// 啟動
-startGame();
+// 語音載入監聽：解決平板第一次啟動沒聲音的問題
+window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices(); 
+    if(!randomizedTargets.length) { 
+        startGame();
+    } 
+};
+
+// 進入時嘗試啟動
+if (window.speechSynthesis.getVoices().length > 0) { 
+    if(!randomizedTargets.length) {
+        startGame();
+    }
+} else {
+    // 某些瀏覽器需要手動呼叫一次以啟動清單
+    window.speechSynthesis.getVoices();
+}
 </script>
 </body>
 </html>
