@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>國語考卷產生器-V15</title>
+    <style>
+        @page { size: A4 landscape; margin: 8mm; }
+        body { font-family: "DFKai-SB", "BiauKai", "標楷體", serif; margin: 0; background: #eee; }
+        #ui-layer { background: #2c3e50; color: white; padding: 15px; position: sticky; top: 0; z-index: 1000; }
+        textarea { width: 100%; height: 120px; font-size: 14px; margin: 10px 0; border-radius: 4px; }
+        .btns { display: flex; gap: 10px; }
+        button { padding: 10px 25px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
+        .btn-gen { background: #3498db; color: white; }
+        .btn-print { background: #2ecc71; color: white; }
+
+        #paper-container { display: flex; justify-content: center; padding: 20px; }
+        .page {
+            background: white; width: 277mm; height: 190mm; padding: 10mm; box-sizing: border-box;
+            writing-mode: vertical-rl; column-count: 2; column-fill: auto;
+            column-rule: 1.5pt solid #000; column-gap: 15mm;
+        }
+        .header { border-left: 5px double #000; padding-left: 10px; margin-left: 25px; }
+        .title { font-size: 26pt; font-weight: bold; }
+        .content { font-size: 18pt; line-height: 3.0; text-align: justify; }
+        .type-title { font-size: 18pt; font-weight: bold; border: 1.5pt solid #000; padding: 5px 0; margin-left: 15px; display: inline-block; break-inside: avoid; }
+
+        .char-unit { 
+            display: inline-block; 
+            vertical-align: middle; 
+            margin: 0 2px;
+            width: 3.2em;
+            writing-mode: horizontal-tb; 
+        }
+        .main-box { 
+            width: 2.2em; height: 2.2em; 
+            border: 1.5pt solid #000; 
+            display: inline-flex; align-items: center; justify-content: center; 
+            font-size: 18pt; float: right; 
+        }
+        .side-box { 
+            width: 0.9em;
+            min-height: 2.2em;
+            border-left: 1pt solid #000; 
+            display: inline-block; 
+            font-size: 11pt; float: right; 
+            line-height: 1.1;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            padding-top: 2px;
+            text-align: center;
+            position: relative; /* 關鍵：讓聲調以此為基準定位 */
+        }
+        
+        .tone-mark {
+            position: absolute;
+            right: -0.5em; /* 貼在注音右側 */
+            top: 0.7em;    /* 約在第一個符號右方 */
+            font-size: 9pt;
+            writing-mode: vertical-rl;
+        }
+
+        .blank-line { color: #000; letter-spacing: 2px; line-height: 1.2; margin-bottom: 30px; display: block; border-bottom: 1px dashed #999; padding-bottom: 5px; }
+        .question-line { display: block; margin-bottom: 10px; }
+        .phonetic { font-size: 14pt; vertical-align: super; }
+
+        @media print { #ui-layer { display: none; } #paper-container { padding: 0; } .page { box-shadow: none; margin: 0; } }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <strong>國語考卷產生器 (V15 造句與聲調最終修正版)</strong>
+    <textarea id="rawInput"></textarea>
+    <div class="btns">
+        <button class="btn-gen" onclick="generate()">產生預覽</button>
+        <button class="btn-print" onclick="window.print()">列印 PDF</button>
+    </div>
+</div>
+
+<div id="paper-container">
+    <div class="page">
+        <div class="header">
+            <div class="title">國語科 練習卷</div>
+        </div>
+        <div class="content" id="outputBody"></div>
+    </div>
+</div>
+
+<script>
+function renderSideBoxContent(str) {
+    const tones = ['ˊ', 'ˇ', 'ˋ', '˙'];
+    let mainPhonetic = str;
+    let toneMark = '';
+    
+    let lastChar = str.slice(-1);
+    if (tones.includes(lastChar)) {
+        mainPhonetic = str.slice(0, -1);
+        toneMark = `<span class="tone-mark">${lastChar}</span>`;
+    }
+    return mainPhonetic + toneMark;
+}
+
+function generate() {
+    const text = document.getElementById('rawInput').value;
+    const lines = text.split('\n');
+    let finalHtml = '';
+    let isGrammarMode = false;
+
+    lines.forEach(line => {
+        let trimmed = line.trim();
+        if (!trimmed) return;
+
+        // 偵測大題：支援「一、」、「第一大題」、「造句」等關鍵字
+        if (/^[一二三四五六七八九十][、. ]/.test(trimmed) || trimmed.includes('大題') || trimmed.includes('部分')) {
+            isGrammarMode = trimmed.includes('造句') || trimmed.includes('造樣造句');
+            finalHtml += `<div class="type-title">${trimmed}</div>`;
+            return;
+        }
+
+        // 處理 [[內容(mode)]]
+        let processedLine = trimmed.replace(/\[\[(.*?)\((mode[12])\)\]\]/g, function(m, p1, mode) {
+            let units = '';
+            if (mode === 'mode1') {
+                units += `<span class="char-unit"><span class="side-box">${renderSideBoxContent(p1)}</span><span class="main-box"></span></span>`;
+            } else {
+                let chars = p1.split('');
+                chars.forEach(char => {
+                    units += `<span class="char-unit"><span class="side-box"></span><span class="main-box">${char}</span></span>`;
+                });
+            }
+            return units;
+        });
+
+        // 處理括號內的注音顯示
+        processedLine = processedLine.replace(/[（\(]([ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦㄧㄨㄩˊˇˋ˙ ]+)[）\)]/g, 
+            '<span class="phonetic">（$1）</span>');
+
+        // 造句邏輯：若在造句大題且行內有括號，生成空白練習行
+        if (isGrammarMode && (processedLine.includes('(') || processedLine.includes('（'))) {
+            finalHtml += `<div class="question-line">${processedLine}</div>`;
+            let blankLine = processedLine.replace(/[\(（](.*?)[\)）]/g, function(m, p1) {
+                // 移除 HTML 標籤後計算文字長度
+                let plainText = p1.replace(/<[^>]*>?/gm, '');
+                return "（" + "　".repeat(plainText.length + 3) + "）";
+            });
+            finalHtml += `<div class="blank-line">${blankLine}</div>`;
+        } else {
+            finalHtml += `<div class="question-line">${processedLine}</div>`;
+        }
+    });
+
+    document.getElementById('outputBody').innerHTML = finalHtml;
+}
+</script>
+</body>
+</html>
