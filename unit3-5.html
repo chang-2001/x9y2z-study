@@ -6,38 +6,23 @@
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; text-align: center; background-color: #e8f4f8; padding: 20px; }
         .container { max-width: 800px; margin: auto; background: white; border: 5px solid #333; border-radius: 20px; padding: 20px; box-shadow: 10px 10px 0px #2980b9; }
-        
-        /* 圖片區：左右並排佈局 */
         .image-display-container { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 20px; /* 手與物品的間距 */
-            background: #fff; 
-            border: 4px solid #000; 
-            padding: 20px; 
-            margin: 0 auto 20px;
-            min-height: 250px;
-            width: 90%;
+            display: flex; justify-content: center; align-items: center; gap: 20px; 
+            background: #fff; border: 4px solid #000; padding: 20px; margin: 0 auto 20px;
+            min-height: 250px; width: 90%;
         }
-        
-        .hand-box { flex: 1; text-align: right; }
-        .item-box { flex: 1; text-align: left; }
-        
-        #bgImg { max-width: 250px; height: auto; } /* 指示圖(手) */
-        #itemImg { max-width: 250px; height: auto; border: 2px solid #eee; border-radius: 10px; } /* 物品圖 */
-
+        .hand-box, .item-box { flex: 1; }
+        .hand-box { text-align: right; }
+        .item-box { text-align: left; }
+        #bgImg, #itemImg { max-width: 250px; height: auto; }
+        #itemImg { border: 2px solid #eee; border-radius: 10px; }
         .sentence-box { font-size: 36px; font-weight: bold; margin: 20px 0; }
         .highlight-word { color: #007bff; font-weight: 900; }
         .plural-s { color: red; font-weight: 900; text-decoration: underline; }
-        
         .options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 600px; margin: 0 auto; }
-        button { padding: 18px; font-size: 24px; cursor: pointer; background-color: #b3e5fc; border: 3px solid #333; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 0 #333; transition: 0.1s; }
+        button { padding: 18px; font-size: 24px; cursor: pointer; background-color: #b3e5fc; border: 3px solid #333; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 0 #333; }
         button:active { transform: translateY(4px); box-shadow: none; }
-        
         .hint { font-size: 22px; margin-top: 15px; font-weight: bold; height: 35px; }
-        .exam-banner { color: #ff6f00; background: #fff3e0; padding: 8px; border-radius: 10px; font-weight: bold; display: none; margin-bottom: 15px; border: 2px dashed #ff6f00; }
-        
         @keyframes flash {
             0% { background-color: #b3e5fc; }
             50% { background-color: #2ecc71; color: white; transform: scale(1.05); }
@@ -49,18 +34,11 @@
 <body>
 
 <div class="container" id="gameScreen">
-    <div id="examMode" class="exam-banner">🤫 考場模式：沒有聲音，請仔細看圖看字！</div>
     <h2>Unit 3-5: 距離與單複數考驗</h2>
-    
     <div class="image-display-container">
-        <div class="hand-box">
-            <img id="bgImg" src="">
-        </div>
-        <div class="item-box">
-            <img id="itemImg" src="">
-        </div>
+        <div class="hand-box"><img id="bgImg" src=""></div>
+        <div class="item-box"><img id="itemImg" src=""></div>
     </div>
-    
     <div class="sentence-box" id="sentence">______ <span id="objectText"></span>.</div>
     <div class="options">
         <button id="btn-This-is" onclick="check('This is')">This is</button>
@@ -80,81 +58,88 @@
 </div>
 
 <script>
-    const rawData = [
-        { bg: 'this.png', item: 'apple_s.png', obj: 'an apple', ans: 'This is', dist: 'near', isPlural: false, htmlObj: 'an apple' },
-        { bg: 'that.png', item: 'apple_s.png', obj: 'an apple', ans: 'That is', dist: 'far', isPlural: false, htmlObj: 'an apple' },
-        { bg: 'this.png', item: 'apple.png', obj: 'apples', ans: 'These are', dist: 'near', isPlural: true, htmlObj: 'apple<span class="plural-s">s</span>' },
-        { bg: 'that.png', item: 'apple.png', obj: 'apples', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'apple<span class="plural-s">s</span>' }
-    ];
+const rawData = [
+    { bg: 'this.png', item: 'apple_s.png', obj: 'an apple', ans: 'This is', dist: 'near', isPlural: false, htmlObj: 'an apple' },
+    { bg: 'that.png', item: 'apple_s.png', obj: 'an apple', ans: 'That is', dist: 'far', isPlural: false, htmlObj: 'an apple' },
+    { bg: 'this.png', item: 'apple.png', obj: 'apples', ans: 'These are', dist: 'near', isPlural: true, htmlObj: 'apple<span class="plural-s">s</span>' },
+    { bg: 'that.png', item: 'apple.png', obj: 'apples', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'apple<span class="plural-s">s</span>' }
+];
 
-    let quizData = [];
-    let current = 0;
-    let isSilent = false;
+let quizData = [];
+let current = 0;
 
-    function restart() {
-        current = 0;
-        quizData = [...rawData].sort(() => Math.random() - 0.5);
-        document.getElementById('gameScreen').style.display = 'block';
-        document.getElementById('resultScreen').style.display = 'none';
-        show();
+// --- 強固型語音模組 ---
+function speak(text) {
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = 'en-US';
+    msg.rate = 0.8;
+
+    const voices = window.speechSynthesis.getVoices();
+    const samantha = voices.find(v => v.name.includes('Samantha'));
+    const siri = voices.find(v => v.name.includes('Siri'));
+    const anyEnglish = voices.find(v => v.lang.startsWith('en'));
+
+    if (samantha) msg.voice = samantha;
+    else if (siri) msg.voice = siri;
+    else if (anyEnglish) msg.voice = anyEnglish;
+
+    window.speechSynthesis.speak(msg);
+}
+
+function restart() {
+    current = 0;
+    quizData = [...rawData].sort(() => Math.random() - 0.5);
+    document.getElementById('gameScreen').style.display = 'block';
+    document.getElementById('resultScreen').style.display = 'none';
+    show();
+}
+
+function check(choice) {
+    const item = quizData[current];
+    const hintEl = document.getElementById('hint');
+    const correctBtn = document.getElementById(`btn-${item.ans.replace(' ', '-')}`);
+
+    if (choice === item.ans) {
+        hintEl.innerText = "🌟 Correct!";
+        hintEl.style.color = "green";
+        document.getElementById('sentence').innerHTML = `<span class="highlight-word">${item.ans}</span> ${item.htmlObj}.`;
+        
+        // 確保傳給 speak 的是純文字 item.obj，避開標籤
+        speak(`${item.ans} ${item.obj}`);
+        
+        setTimeout(() => {
+            current++;
+            (current < quizData.length) ? show() : finish();
+        }, 2500);
+    } else {
+        speak("Try again");
+        correctBtn.classList.add('flash-correct');
+        setTimeout(() => correctBtn.classList.remove('flash-correct'), 1000);
+        hintEl.style.color = (item.dist === 'near') ? "#007bff" : "#28a745";
+        hintEl.innerText = (item.dist === 'near' ? "「近」" : "「遠」") + (item.isPlural ? "且「多個」" : "且「一個」");
     }
+}
 
-    function speak(text) {
-        if (isSilent) return; 
-        const msg = new SpeechSynthesisUtterance(text);
-        const voices = window.speechSynthesis.getVoices();
-        const samantha = voices.find(v => v.name.includes('Samantha')) || voices.find(v => v.lang.startsWith('en'));
-        if (samantha) msg.voice = samantha;
-        msg.rate = 0.8;
-        window.speechSynthesis.speak(msg);
-    }
+function show() {
+    const item = quizData[current];
+    document.getElementById('bgImg').src = `images/${item.bg}`;
+    document.getElementById('itemImg').src = `images/${item.item}`;
+    document.getElementById('sentence').innerHTML = `______ ${item.obj}.`;
+    document.getElementById('hint').innerText = "";
+}
 
-    function check(choice) {
-        const item = quizData[current];
-        const hintEl = document.getElementById('hint');
-        const correctBtn = document.getElementById(`btn-${item.ans.replace(' ', '-')}`);
+function finish() {
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('resultScreen').style.display = 'block';
+    speak("Great job! You finished the game.");
+}
 
-        if (choice === item.ans) {
-            hintEl.innerText = "🌟 Correct!";
-            hintEl.style.color = "green";
-            document.getElementById('sentence').innerHTML = `<span class="highlight-word">${item.ans}</span> ${item.htmlObj}.`;
-            
-            // 即時發聲
-            speak(`${item.ans} ${item.obj}`);
-            
-            // 停留 2.5 秒看畫面再跳題
-            setTimeout(() => {
-                current++;
-                (current < quizData.length) ? show() : finish();
-            }, 2500);
-        } else {
-            if(!isSilent) speak("Try again");
-            correctBtn.classList.add('flash-correct');
-            setTimeout(() => correctBtn.classList.remove('flash-correct'), 1000);
-
-            hintEl.style.color = (item.dist === 'near') ? "#007bff" : "#28a745";
-            hintEl.innerText = (item.dist === 'near' ? "「近」" : "「遠」") + (item.isPlural ? "且「多個」" : "且「一個」");
-        }
-    }
-
-    function show() {
-        const item = quizData[current];
-        isSilent = (Math.random() < 0.33); 
-        document.getElementById('examMode').style.display = isSilent ? "block" : "none";
-        document.getElementById('bgImg').src = `images/${item.bg}`;
-        document.getElementById('itemImg').src = `images/${item.item}`;
-        document.getElementById('sentence').innerHTML = `______ ${item.obj}.`;
-        document.getElementById('hint').innerText = "";
-    }
-
-    function finish() {
-        document.getElementById('gameScreen').style.display = 'none';
-        document.getElementById('resultScreen').style.display = 'block';
-        speak("Great job! You are an English master.");
-    }
-
-    window.speechSynthesis.onvoiceschanged = () => {};
-    window.onload = restart;
+window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices();
+    if(!randomizedTargets.length) restart(); 
+};
+window.onload = () => { if(window.speechSynthesis.getVoices().length > 0) restart(); };
 </script>
 </body>
 </html>
