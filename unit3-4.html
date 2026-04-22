@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit 3-4: Singular vs Plural</title>
+    <style>
+        body { font-family: 'Microsoft JhengHei', sans-serif; text-align: center; background-color: #fcfaf2; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; border: 5px solid #333; border-radius: 20px; padding: 20px; box-shadow: 10px 10px 0px #888; }
+        .image-box { width: 100%; height: 250px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
+        .image-box img { max-height: 100%; border: 4px solid #000; border-radius: 10px; }
+        .sentence-box { font-size: 32px; font-weight: bold; margin: 20px 0; min-height: 45px; color: #2c3e50; }
+        .plural-s { color: red; font-size: 1.2em; text-decoration: underline; font-weight: 900; }
+        .options { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        button { padding: 15px 30px; font-size: 24px; cursor: pointer; background-color: #ffeb3b; border: 3px solid #333; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 0 #333; transition: 0.1s; }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        .hint { color: #e74c3c; font-size: 18px; margin-top: 15px; font-weight: bold; height: 50px; }
+        .result-screen { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="gameScreen">
+    <h2>Unit 3-4: 單數定複數？</h2>
+    <div class="image-box"><img id="mainImg" src=""></div>
+    <div class="sentence-box" id="sentence">______ <span id="objectText"></span>.</div>
+    <div class="options">
+        <button id="btn-This-is" onclick="check('This is')">This is</button>
+        <button id="btn-These-are" onclick="check('These are')">These are</button>
+    </div>
+    <div id="hint" class="hint"></div>
+</div>
+
+<div class="container result-screen" id="resultScreen">
+    <h1>🎉 太棒了！</h1>
+    <p style="font-size: 24px;">挑戰完成！記得複數要看字尾的 <span class="plural-s">s</span> 喔！</p>
+    <div class="options" style="margin-top: 30px;">
+        <button onclick="restart()">再玩一次</button>
+        <button onclick="location.href='index.html'" style="background-color: #a2d2ff;">回到首頁</button>
+    </div>
+</div>
+
+<script>
+    const rawData = [
+        { img: 'apple_s.png', obj: 'an apple', ans: 'This is', isPlural: false, htmlObj: 'an apple' },
+        { img: 'apple.png', obj: 'apples', ans: 'These are', isPlural: true, htmlObj: 'apple<span class="plural-s">s</span>' },
+        { img: 'banana_s.png', obj: 'a banana', ans: 'This is', isPlural: false, htmlObj: 'a banana' },
+        { img: 'banana.png', obj: 'bananas', ans: 'These are', isPlural: true, htmlObj: 'banana<span class="plural-s">s</span>' },
+        { img: 'orange_s.png', obj: 'an orange', ans: 'This is', isPlural: false, htmlObj: 'an orange' },
+        { img: 'oranges.png', obj: 'oranges', ans: 'These are', isPlural: true, htmlObj: 'orange<span class="plural-s">s</span>' },
+        { img: 'sandwiches.png', obj: 'sandwiches', ans: 'These are', isPlural: true, htmlObj: 'sandwich<span class="plural-s">es</span>' }
+    ];
+
+    let quizData = [];
+    let current = 0;
+
+    function restart() {
+        current = 0;
+        quizData = [...rawData].sort(() => Math.random() - 0.5);
+        document.getElementById('gameScreen').style.display = 'block';
+        document.getElementById('resultScreen').style.display = 'none';
+        show();
+    }
+
+    function speak(text) {
+        const msg = new SpeechSynthesisUtterance(text);
+        const voices = window.speechSynthesis.getVoices();
+        const samantha = voices.find(v => v.name.includes('Samantha')) || voices.find(v => v.lang.startsWith('en'));
+        if (samantha) msg.voice = samantha;
+        msg.lang = 'en-US';
+        msg.rate = 0.8; 
+        window.speechSynthesis.speak(msg);
+    }
+
+    function check(choice) {
+        const item = quizData[current];
+        const hintEl = document.getElementById('hint');
+        
+        if (choice === item.ans) {
+            // 【馬上執行】1. 顯示正確答案與紅標字尾
+            hintEl.innerText = "🌟 Correct!";
+            hintEl.style.color = "green";
+            document.getElementById('sentence').innerHTML = `${item.ans} ${item.htmlObj}.`;
+            
+            // 【馬上執行】2. 觸發語音回饋
+            speak(`${item.ans} ${item.obj}`);
+            
+            // 【延遲 2.5 秒】3. 讓畫面停在目前的狀態供學習，然後才跳題
+            setTimeout(() => {
+                current++;
+                if (current < quizData.length) {
+                    show();
+                } else {
+                    finish();
+                }
+            }, 2500); 
+
+        } else {
+            // 答錯時即時提示，不跳題
+            speak("Try again");
+            hintEl.style.color = "red";
+            hintEl.innerHTML = item.isPlural ? 
+                `看到單字後面的 <span class="plural-s">s</span> 了嗎？<br>多個要用 These are 喔！` : 
+                "這只有一個，要用 This is 喔！";
+        }
+    }
+
+    function show() {
+        const item = quizData[current];
+        document.getElementById('mainImg').src = `images/${item.img}`;
+        document.getElementById('sentence').innerHTML = `______ ${item.obj}.`;
+        document.getElementById('hint').innerText = "";
+    }
+
+    function finish() {
+        document.getElementById('gameScreen').style.display = 'none';
+        document.getElementById('resultScreen').style.display = 'block';
+        speak("Wonderful! You finished the challenge.");
+    }
+
+    // 確保語音清單就緒
+    window.speechSynthesis.onvoiceschanged = () => {};
+    window.onload = restart;
+</script>
+</body>
+</html>
