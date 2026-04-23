@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>English Learning Game</title>
+    <style>
+        :root { --primary: #FF3B30; --secondary: #4CD964; --highlight: #FF2D55; }
+        body { margin: 0; padding: 0; background: #FFF; font-family: 'Open Sans', sans-serif; text-align: center; }
+        #game-container { padding: 20px; max-width: 700px; margin: 0 auto; }
+        
+        .main-img { width: 320px; height: auto; border: 10px solid black; border-radius: 20px; margin-bottom: 20px; box-shadow: 10px 10px 0px #DDD; }
+        .phrase-text { font-size: 55px; font-weight: 900; color: var(--highlight); margin: 10px 0; text-transform: uppercase; }
+        .sentence-display { font-size: 28px; color: #333; min-height: 80px; font-weight: bold; padding: 0 20px; line-height: 1.4; }
+        
+        .highlight-part { color: var(--primary); font-weight: 900; text-decoration: underline; }
+
+        .btn-black { background: black; color: white; border: none; padding: 20px 40px; font-size: 26px; border-radius: 60px; font-weight: bold; cursor: pointer; margin: 10px; box-shadow: 4px 4px 0px #666; text-decoration: none; display: inline-block; }
+        
+        #quiz-options { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 30px; }
+        .option-card { width: 190px; background: white; border: 8px solid black; padding: 10px; cursor: pointer; }
+        .option-card img { max-width: 100%; height: auto; border-radius: 10px; }
+        .option-card p { font-weight: 900; margin: 10px 0 0; font-size: 20px; color: black; }
+
+        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:2000; border: 25px solid var(--secondary); box-sizing: border-box; }
+        .success-word { font-size: 45px; font-weight: 900; color: black; margin: 20px; text-align: center; }
+        #ov-cheer { font-size: 60px; font-weight: 900; color: var(--secondary); }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="study-mode">
+        <h1 style="font-weight: 900; background: black; color: white; display: inline-block; padding: 5px 20px;">1. LEARN</h1>
+        <div style="margin-top:20px;">
+            <img id="study-img" class="main-img" src="">
+            <div id="study-phrase" class="phrase-text"></div>
+            <div id="study-sentence" class="sentence-display"></div>
+            <button class="btn-black" onclick="nextStudy()">NEXT ➔</button>
+        </div>
+    </div>
+
+    <div id="quiz-mode" class="hidden">
+        <h1 style="font-weight: 900; border-bottom: 5px solid black; display: inline-block;">2. QUIZ</h1>
+        <div id="quiz-en" style="font-size: 38px; font-weight: 900; margin-top: 20px; color: #000;"></div>
+        <div id="quiz-zh" style="font-size: 22px; color: #666; margin-bottom: 20px; font-weight: bold;"></div>
+        <div id="quiz-options"></div>
+    </div>
+
+    <div id="overlay">
+        <div id="ov-cheer">GOOD JOB!</div>
+        <div id="ov-box" style="border:10px solid black; padding:20px; background:white; margin: 20px;">
+            <img id="ov-img" src="" style="width:280px;">
+        </div>
+        <div id="ov-sentence" class="success-word"></div>
+    </div>
+
+    <div id="finish-mode" class="hidden">
+        <h1 style="font-size: 100px;">🏆</h1>
+        <h2 style="font-size: 50px; font-weight: 900;">SUPER WORK!</h2>
+        <button class="btn-black" onclick="location.reload()">🔄 REPLAY</button>
+        <a href="index.html" class="btn-black">🏠 HOME</a>
+    </div>
+</div>
+
+<script>
+const IMAGE_PATH = "images/";
+const rawData = [
+    { phrase: "for lunch", img: "for_lunch.png", sentence: "I make sandwiches for lunch.", zh: "我做三明治當午餐。" },
+    { phrase: "after lunch", img: "after_lunch.png", sentence: "I drink juice after lunch.", zh: "我在午餐後喝果汁。" },
+    { phrase: "in summer", img: "in_summer.png", sentence: "I like ice cream in summer.", zh: "我在夏天喜歡吃冰淇淋。" },
+    { phrase: "after sports", img: "after_sports.png", sentence: "I drink water after sports.", zh: "運動後喝水。" },
+    { phrase: "every morning", img: "every_morning.png", sentence: "Mom drinks tea every morning.", zh: "媽媽每天早上喝茶。" },
+    { phrase: "my favorite", img: "my_favorite.png", sentence: "Ice cream is my favorite food.", zh: "冰淇淋是我最愛的食物。" },
+    { phrase: "a glass of", img: "a_glass_of.png", sentence: "I want a glass of water.", zh: "我想要一杯水。" },
+    { phrase: "take ... to", img: "take_to_vet.png", sentence: "I take my dog to the vet.", zh: "我帶我的狗去獸醫院。" },
+    { phrase: "take ... to", img: "take_to_play.png", sentence: "Mom takes me to play.", zh: "媽媽帶我去公園玩。" },
+    { phrase: "play with", img: "play_with.png", sentence: "I like to play with my friend.", zh: "我喜歡跟我的朋友玩。" },
+    { phrase: "zip up", img: "zip_up.png", sentence: "Please zip up your jacket.", zh: "請拉上你的外套拉鍊。" }
+];
+
+let studyData = [...rawData];
+let quizData = [...rawData].sort(() => Math.random() - 0.5);
+let currentIdx = 0;
+
+function speak(text, callback) {
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = 'en-US';
+    msg.rate = 0.75;
+    const voices = window.speechSynthesis.getVoices();
+    const samantha = voices.find(v => v.name.includes('Samantha')) || voices.find(v => v.lang.startsWith('en'));
+    if (samantha) msg.voice = samantha;
+    if (callback) msg.onend = callback;
+    window.speechSynthesis.speak(msg);
+}
+
+function formatSentence(fullText, keyPhrase) {
+    if (keyPhrase === "take ... to") {
+        return fullText.replace(/\b(take[s]?)\b/gi, '<span class="highlight-part">$1</span>')
+                       .replace(/\b(to)\b/gi, '<span class="highlight-part">$1</span>');
+    }
+    const regex = new RegExp(`(${keyPhrase})`, "gi");
+    return fullText.replace(regex, '<span class="highlight-part">$1</span>');
+}
+
+// --- 修正後的挖空邏輯：保留中間受詞 ---
+function getBlankedSentence(sentence, phrase) {
+    if (phrase === "take ... to") {
+        // 分別將 take 和 to 變成底線，保留中間的所有文字
+        return sentence.replace(/\b(take[s]?)\b/gi, "_______")
+                       .replace(/\b(to)\b/gi, "_______");
+    }
+    return sentence.replace(phrase, "________");
+}
+
+function initStudy() {
+    const item = studyData[currentIdx];
+    document.getElementById('study-img').src = IMAGE_PATH + item.img;
+    document.getElementById('study-phrase').innerText = item.phrase;
+    document.getElementById('study-sentence').innerHTML = formatSentence(item.sentence, item.phrase);
+    speak(item.phrase, () => {
+        setTimeout(() => { speak(item.sentence); }, 1000);
+    });
+}
+
+function nextStudy() {
+    currentIdx++;
+    if (currentIdx < studyData.length) {
+        initStudy();
+    } else {
+        startQuiz();
+    }
+}
+
+function startQuiz() {
+    currentIdx = 0;
+    document.getElementById('study-mode').classList.add('hidden');
+    document.getElementById('quiz-mode').classList.remove('hidden');
+    loadQuiz();
+}
+
+function loadQuiz() {
+    const item = quizData[currentIdx];
+    document.getElementById('quiz-en').innerText = getBlankedSentence(item.sentence, item.phrase);
+    document.getElementById('quiz-zh').innerText = item.zh;
+
+    let opts = [item];
+    while(opts.length < 3) {
+        let rand = rawData[Math.floor(Math.random() * rawData.length)];
+        // 確保選項不重複圖片
+        if(!opts.find(o => o.img === rand.img)) opts.push(rand);
+    }
+    opts.sort(() => Math.random() - 0.5);
+
+    const container = document.getElementById('quiz-options');
+    container.innerHTML = "";
+    opts.forEach(opt => {
+        const div = document.createElement('div');
+        div.className = 'option-card';
+        div.innerHTML = `<img src="${IMAGE_PATH + opt.img}"><p>${opt.phrase}</p>`;
+        div.onclick = () => {
+            if(opt.img === item.img) showOverlay(item);
+            else speak("Try again");
+        };
+        container.appendChild(div);
+    });
+}
+
+function showOverlay(item) {
+    const ov = document.getElementById('overlay');
+    document.getElementById('ov-img').src = IMAGE_PATH + item.img;
+    document.getElementById('ov-sentence').innerHTML = formatSentence(item.sentence, item.phrase);
+    ov.style.display = "flex";
+
+    speak("Good job!", () => {
+        setTimeout(() => { speak(item.sentence); }, 500);
+    });
+
+    setTimeout(() => {
+        ov.style.display = "none";
+        currentIdx++;
+        if (currentIdx < quizData.length) loadQuiz();
+        else {
+            document.getElementById('quiz-mode').classList.add('hidden');
+            document.getElementById('finish-mode').classList.remove('hidden');
+        }
+    }, 4000);
+}
+
+window.speechSynthesis.onvoiceschanged = () => {
+    if(document.getElementById('study-phrase').innerText === "") initStudy();
+};
+
+window.onload = () => {
+    if (window.speechSynthesis.getVoices().length > 0) initStudy();
+};
+</script>
+</body>
+</html>
