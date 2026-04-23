@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>小數乘法：從整數到定位</title>
+    <style>
+        :root { --active: #e74c3c; --carry: #27ae60; --hint: #0984e3; --gray: #ccc; }
+        body { font-family: 'Consolas', '微軟正黑體', monospace; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        
+        .control-area { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input { font-size: 18px; width: 100px; text-align: center; padding: 5px; margin: 0 10px; border: 2px solid #ddd; border-radius: 5px; }
+
+        .paper { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); width: 850px; }
+        h3 { color: #7f8c8d; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+
+        /* 上層：整數直式區 (沿用你的引擎樣式) */
+        .math-board { font-size: 45px; text-align: right; letter-spacing: 12px; line-height: 1.1; position: relative; margin-bottom: 40px; }
+        .carry-row { height: 40px; font-size: 24px; color: var(--carry); letter-spacing: 28px; font-weight: bold; min-height: 40px; }
+        .line { border-bottom: 3px solid #333; margin: 8px 0; letter-spacing: 0; }
+        .operator { position: absolute; left: -45px; top: 85px; }
+
+        /* 下層：小數定位區 */
+        .decimal-area { font-size: 40px; font-weight: bold; border-top: 4px dashed #eee; padding-top: 30px; position: relative; }
+        .logic-text { font-size: 24px; color: var(--carry); margin-bottom: 20px; }
+        .result-container { display: flex; align-items: center; justify-content: flex-end; height: 60px; padding-right: 20px; }
+        .arrow-line { height: 40px; color: var(--hint); font-size: 35px; text-align: right; letter-spacing: 5px; padding-right: 25px; min-height: 40px; }
+        .cursor-v { border-left: 4px solid #333; height: 50px; margin-left: 5px; }
+        .red-dot { color: var(--active); font-weight: bold; }
+
+        /* 通用 */
+        .active { color: var(--active) !important; font-weight: bold; }
+        .carry { color: var(--carry) !important; font-weight: bold; }
+        .placeholder { color: var(--gray); }
+        #msg-box { margin-top: 20px; background: #2c3e50; color: white; padding: 15px; border-radius: 8px; width: 820px; text-align: center; font-size: 22px; }
+    </style>
+</head>
+<body>
+
+<div class="control-area">
+    數字 A：<input type="text" id="numA" value="1.25"> × 
+    數字 B：<input type="text" id="numB" value="4">
+    <button onclick="mainExecutor.run()" style="padding: 10px 25px; cursor:pointer; background: #2c3e50; color: white; border:none; border-radius: 5px;">開始完整演示</button>
+</div>
+
+<div class="paper">
+    <div id="section-upper">
+        <h3>1. 整數直式演示</h3>
+        <div class="math-board">
+            <div class="carry-row" id="carries"></div>
+            <div id="rowA"></div>
+            <div id="rowB" style="position:relative"><span class="operator">×</span></div>
+            <div class="line"></div>
+            <div id="layers"></div>
+            <div id="final-line" style="display:none" class="line"></div>
+            <div id="rowTotal"></div>
+        </div>
+    </div>
+
+    <div id="section-lower" class="decimal-area" style="display:none">
+        <h3>2. 小數點定位演示</h3>
+        <div id="decimal-formula" class="logic-text"></div>
+        <div class="result-container" id="logic-res-row">
+            <div id="copy-total"></div><span id="v-line" class="cursor-v"></span>
+        </div>
+        <div id="arrow-row" class="arrow-line"></div>
+        <div id="final-decimal-row" style="text-align:right; padding-right:25px; font-size:50px;"></div>
+    </div>
+</div>
+
+<div id="msg-box">請輸入含小數的數字並點擊演示</div>
+
+<script>
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const say = async (txt) => { document.getElementById('msg-box').innerHTML = txt; };
+
+const mainExecutor = {
+    async run() {
+        const rawA = document.getElementById('numA').value;
+        const rawB = document.getElementById('numB').value;
+        const dpA = (rawA.split('.')[1] || '').length;
+        const dpB = (rawB.split('.')[1] || '').length;
+        const totalDP = dpA + dpB;
+
+        const intA = rawA.replace('.', '').split('');
+        const intB = rawB.replace('.', '').split('');
+
+        // --- 重置界面 ---
+        document.getElementById('section-lower').style.display = 'none';
+        document.getElementById('final-line').style.display = 'none';
+        document.getElementById('layers').innerHTML = '';
+        document.getElementById('rowTotal').innerText = '';
+        document.getElementById('arrow-row').innerText = '';
+        document.getElementById('final-decimal-row').innerText = '';
+
+        // --- 1. 整數直式引擎啟動 ---
+        await say("首先無視小數點，當作整數進行運算...");
+        document.getElementById('rowA').innerHTML = intA.map((d, i) => `<span id="a_${i}">${d}</span>`).join('');
+        document.getElementById('rowB').innerHTML = `<span class="operator">×</span>` + intB.map((d, i) => `<span id="b_${i}">${d}</span>`).join('');
+        document.getElementById('carries').innerHTML = new Array(intA.length + 1).fill('').map((_, i) => `<span id="c_${i}"></span>`).join('');
+
+        const results = [];
+        for (let j = intB.length - 1; j >= 0; j--) {
+            const layerEl = document.createElement('div');
+            document.getElementById('layers').appendChild(layerEl);
+            let layerDigits = new Array(intB.length - 1 - j).fill('<span class="placeholder">0</span>');
+            let currentCarry = 0;
+
+            for (let i = intA.length - 1; i >= 0; i--) {
+                this.clearStyles();
+                if (document.getElementById(`c_${i+1}`)) document.getElementById(`c_${i+1}`).innerText = '';
+                document.getElementById(`a_${i}`).className = 'active';
+                document.getElementById(`b_${j}`).className = 'active';
+                
+                const prod = parseInt(intA[i]) * parseInt(intB[j]);
+                await say(`${intA[i]} × ${intB[j]} = ${prod}`);
+                await sleep(500);
+
+                const sum = prod + currentCarry;
+                if (currentCarry > 0) {
+                    document.getElementById(`c_${i}`).innerText = currentCarry;
+                    document.getElementById(`c_${i}`).className = 'carry';
+                    await say(`${prod} + 進位 ${currentCarry} = ${sum}`);
+                    await sleep(500);
+                }
+                
+                currentCarry = Math.floor(sum / 10);
+                layerDigits.unshift(`<span>${sum % 10}</span>`);
+                layerEl.innerHTML = layerDigits.join('');
+                await sleep(500);
+            }
+            if (currentCarry > 0) {
+                layerDigits.unshift(`<span>${currentCarry}</span>`);
+                layerEl.innerHTML = layerDigits.join('');
+                await sleep(500);
+            }
+            results.push(parseInt(intA.join('')) * parseInt(intB[j]) * Math.pow(10, intB.length - 1 - j));
+        }
+
+        this.clearStyles();
+        document.getElementById('final-line').style.display = 'block';
+        const finalInt = results.reduce((p, c) => p + c, 0);
+        document.getElementById('rowTotal').innerText = finalInt;
+        await say(`整數運算完成，結果為 ${finalInt}`);
+        await sleep(1500);
+
+        // --- 2. 小數點定位演示 ---
+        document.getElementById('section-lower').style.display = 'block';
+        await say("現在進行小數點定位演示...");
+        
+        document.getElementById('decimal-formula').innerHTML = `${rawA} × ${rawB}<br>${dpA} + ${dpB} = <span class='active'>${totalDP}</span> 位小數`;
+        await sleep(1500);
+
+        const copyTotalEl = document.getElementById('copy-total');
+        copyTotalEl.innerText = finalInt;
+        await say("複製整數結果，並在最右邊畫一條線");
+        await sleep(1000);
+
+        const arrowRow = document.getElementById('arrow-row');
+        await say(`由右往左數 <span class='active'>${totalDP}</span> 位...`);
+        
+        let arrows = "";
+        for(let k=0; k < totalDP; k++) {
+            await sleep(400); // 0.4秒增加一個箭頭
+            arrows = "←" + arrows;
+            arrowRow.innerHTML = arrows;
+        }
+        await sleep(800);
+
+        // 最後著陸點：計算小數點位置並顯示
+        const finalStr = (finalInt / Math.pow(10, totalDP)).toFixed(totalDP);
+        const parts = finalStr.split('.');
+        const resultHTML = `${parts[0]}<span class="red-dot">.</span>${parts[1]}`;
+        
+        document.getElementById('final-decimal-row').innerHTML = resultHTML;
+        await say(`在對應位置點下<span class='active'>紅點</span>，計算完成！`);
+    },
+
+    clearStyles() {
+        document.querySelectorAll('span').forEach(s => s.classList.remove('active', 'carry'));
+    }
+};
+</script>
+
+</body>
+</html>

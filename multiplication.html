@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>通用型直式乘法動畫引擎</title>
+    <style>
+        :root { --active: #e74c3c; --carry: #27ae60; --hint: #0984e3; }
+        body { font-family: 'Consolas', '微軟正黑體', monospace; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .input-area { margin-bottom: 20px; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input { font-size: 18px; width: 80px; text-align: center; padding: 5px; margin: 0 5px; }
+        
+        .main-ui { display: flex; gap: 40px; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); min-width: 750px; }
+        .math-board { font-size: 45px; text-align: right; letter-spacing: 12px; line-height: 1.1; position: relative; flex-grow: 1; }
+        .carry-row { height: 40px; font-size: 24px; color: var(--carry); letter-spacing: 28px; font-weight: bold; min-height: 40px; }
+        .line { border-bottom: 3px solid #333; margin: 8px 0; letter-spacing: 0; }
+        .operator { position: absolute; left: -45px; top: 85px; }
+
+        .active { color: var(--active) !important; font-weight: bold; }
+        .carry { color: var(--carry) !important; font-weight: bold; }
+        .placeholder { color: #ccc; }
+
+        .hint-side { width: 320px; border-left: 5px solid #eee; padding-left: 25px; display: flex; align-items: center; }
+        #msg { font-size: 26px; color: var(--hint); font-weight: bold; transition: opacity 0.2s; }
+        
+        button { padding: 10px 25px; font-size: 18px; background: #2c3e50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="input-area">
+        被乘數：<input type="number" id="numA" value="125"> 
+        × 乘數：<input type="number" id="numB" value="14">
+        <button onclick="engine.start()">開始演示</button>
+    </div>
+
+    <div class="main-ui">
+        <div class="math-board" id="board">
+            <div class="carry-row" id="carries"></div>
+            <div id="rowA"></div>
+            <div id="rowB" style="position:relative"><span class="operator">×</span></div>
+            <div class="line"></div>
+            <div id="layers"></div>
+            <div id="final-line" style="display:none" class="line"></div>
+            <div id="rowTotal"></div>
+        </div>
+        <div class="hint-side">
+            <div id="msg">請輸入數字並點擊開始</div>
+        </div>
+    </div>
+
+<script>
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const msgEl = document.getElementById('msg');
+
+const engine = {
+    async say(txt) {
+        msgEl.style.opacity = 0; await sleep(150);
+        msgEl.innerHTML = txt; msgEl.style.opacity = 1;
+    },
+
+    clearStyles() {
+        document.querySelectorAll('span').forEach(s => s.classList.remove('active', 'carry'));
+    },
+
+    async start() {
+        const A = document.getElementById('numA').value.split('');
+        const B = document.getElementById('numB').value.split('');
+        
+        // 初始化界面
+        document.getElementById('rowA').innerHTML = A.map((d, i) => `<span id="a_${i}">${d}</span>`).join('');
+        document.getElementById('rowB').innerHTML = `<span class="operator">×</span>` + B.map((d, i) => `<span id="b_${i}">${d}</span>`).join('');
+        document.getElementById('carries').innerHTML = new Array(A.length + 1).fill(0).map((_, i) => `<span id="c_${i}"></span>`).join('');
+        document.getElementById('layers').innerHTML = '';
+        document.getElementById('rowTotal').innerHTML = '';
+        document.getElementById('final-line').style.display = 'none';
+
+        const results = [];
+
+        // 乘法主迴圈 (從乘數的個位開始)
+        for (let j = B.length - 1; j >= 0; j--) {
+            const layerId = `layer_${j}`;
+            const layerEl = document.createElement('div');
+            layerEl.id = layerId;
+            document.getElementById('layers').appendChild(layerEl);
+            
+            let layerDigits = new Array(B.length - 1 - j).fill('<span class="placeholder">0</span>');
+            let currentCarry = 0;
+
+            await this.say(`現在用乘數的 <span class="active">${B[j]}</span> 乘上方`);
+
+            // 被乘數迴圈 (從右到左)
+            for (let i = A.length - 1; i >= 0; i--) {
+                this.clearStyles();
+                // 算下一位時，清掉前一位的進位顯示
+                if (document.getElementById(`c_${i+1}`)) document.getElementById(`c_${i+1}`).innerText = '';
+
+                document.getElementById(`a_${i}`).classList.add('active');
+                document.getElementById(`b_${j}`).classList.add('active');
+                
+                const prod = parseInt(A[i]) * parseInt(B[j]);
+                await this.say(`${A[i]} × ${B[j]} = ${prod}`);
+                await sleep(800);
+
+                if (currentCarry > 0) {
+                    const oldCarry = currentCarry;
+                    document.getElementById(`c_${i}`).innerText = oldCarry;
+                    document.getElementById(`c_${i}`).classList.add('carry');
+                    await this.say(`${prod} + 剛才進位的 ${oldCarry} = ${prod + oldCarry}`);
+                    currentCarry = Math.floor((prod + oldCarry) / 10);
+                    layerDigits.unshift(`<span>${(prod + oldCarry) % 10}</span>`);
+                    await sleep(800);
+                } else {
+                    currentCarry = Math.floor(prod / 10);
+                    layerDigits.unshift(`<span>${prod % 10}</span>`);
+                    if (currentCarry > 0) {
+                        document.getElementById(`c_${i}`).innerText = currentCarry;
+                        await this.say(`寫下 ${prod % 10}，進位 ${currentCarry}`);
+                    }
+                }
+                
+                layerEl.innerHTML = layerDigits.join('');
+                await sleep(800);
+            }
+
+            if (currentCarry > 0) {
+                layerDigits.unshift(`<span>${currentCarry}</span>`);
+                layerEl.innerHTML = layerDigits.join('');
+                await this.say(`最後進位 ${currentCarry}`);
+                await sleep(800);
+            }
+            results.push(parseInt(A.join('')) * parseInt(B[j]) * Math.pow(10, B.length - 1 - j));
+            document.getElementById(`c_0`).innerText = ''; 
+        }
+
+        // 總結
+        this.clearStyles();
+        document.getElementById('final-line').style.display = 'block';
+        const finalSum = results.reduce((a, b) => a + b, 0);
+        document.getElementById('rowTotal').innerText = finalSum;
+        await this.say(`全部加起來，結果是：${finalSum}`);
+    }
+};
+</script>
+</body>
+</html>
