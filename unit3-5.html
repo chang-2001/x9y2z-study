@@ -14,15 +14,15 @@
             min-height: 250px; width: 90%;
         }
         .hand-box, .item-box { flex: 1; display: flex; justify-content: center; align-items: center; }
-        #bgImg, #itemImg { max-width: 100%; height: auto; display: block; }
-        #itemImg { border: 2px solid #eee; border-radius: 10px; max-height: 220px; }
+        #bgImg, #itemImg { max-width: 100%; height: auto; max-height: 220px; display: block; }
+        #itemImg { border: 2px solid #eee; border-radius: 10px; }
 
-        .sentence-box { font-size: 36px; font-weight: bold; margin: 20px 0; }
+        .sentence-box { font-size: 36px; font-weight: bold; margin: 20px 0; min-height: 50px; }
         .highlight-word { color: #007bff; font-weight: 900; }
         
         /* 視覺強化標籤 */
         .plural-s { color: red; font-weight: 900; text-decoration: underline; }
-        .article-a { color: #FF8C00; font-weight: 900; } /* 橘色標註 a/an */
+        .article-a { color: #FF8C00; font-weight: 900; }
 
         .options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 600px; margin: 0 auto; }
         button { padding: 18px; font-size: 24px; cursor: pointer; background-color: #b3e5fc; border: 3px solid #333; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 0 #333; transition: 0.1s; }
@@ -46,7 +46,7 @@
         <div class="item-box"><img id="itemImg" src=""></div>
     </div>
     
-    <div class="sentence-box" id="sentence">______ <span id="objectText"></span>.</div>
+    <div class="sentence-box" id="sentence">______ <span id="objectPlaceholder"></span>.</div>
     <div class="options">
         <button id="btn-This-is" onclick="check('This is')">This is</button>
         <button id="btn-That-is" onclick="check('That is')">That is</button>
@@ -67,48 +67,98 @@
 <script>
 const IMG_DIR = "images/";
 
-// 橘色 a/an, 紅色 s/es
-const rawData = [
-    { bg: 'this.png', item: 'apple_s.png', obj: 'an apple', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">an</span> apple' },
-    { bg: 'that.png', item: 'apple.png', obj: 'apples', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'apple<span class="plural-s">s</span>' },
-    { bg: 'this.png', item: 'orange_s.png', obj: 'an orange', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">an</span> orange' },
-    { bg: 'that.png', item: 'oranges.png', obj: 'oranges', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'orange<span class="plural-s">s</span>' },
-    { bg: 'this.png', item: 'hamburger.png', obj: 'a hamburger', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">a</span> hamburger' },
-    { bg: 'that.png', item: 'hamburgers.png', obj: 'hamburgers', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'hamburger<span class="plural-s">s</span>' },
-    { bg: 'this.png', item: 'hot_dog.png', obj: 'a hot dog', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">a</span> hot dog' },
-    { bg: 'that.png', item: 'hot_dogs.png', obj: 'hot dogs', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'hot dog<span class="plural-s">s</span>' },
-    { bg: 'this.png', item: 'pizza.png', obj: 'a pizza', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">a</span> pizza' },
-    { bg: 'that.png', item: 'pizzas.png', obj: 'pizzas', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'pizza<span class="plural-s">s</span>' },
-    { bg: 'this.png', item: 'sandwich.png', obj: 'a sandwich', ans: 'This is', dist: 'near', isPlural: false, htmlObj: '<span class="article-a">a</span> sandwich' },
-    { bg: 'that.png', item: 'sandwiches.png', obj: 'sandwiches', ans: 'Those are', dist: 'far', isPlural: true, htmlObj: 'sandwich<span class="plural-s">es</span>' }
+// 定義基本物體數據
+const foodItems = [
+    { name: 'apple', article: 'an', pluralSuffix: 's' },
+    { name: 'orange', article: 'an', pluralSuffix: 's' },
+    { name: 'hot_dog', article: 'a', pluralSuffix: 's', displayName: 'hot dog' },
+    { name: 'sandwich', article: 'a', pluralSuffix: 'es' },
+    { name: 'pizza', article: 'a', pluralSuffix: 's' },
+    { name: 'hamburger', article: 'a', pluralSuffix: 's' },
+    { name: 'banana', article: 'a', pluralSuffix: 's' }
 ];
 
+// 組合規則
+const rules = [
+    { bg: 'this.png', ans: 'This is', dist: 'near', isPlural: false },
+    { bg: 'that.png', ans: 'That is', dist: 'far', isPlural: false },
+    { bg: 'these.png', ans: 'These are', dist: 'near', isPlural: true },
+    { bg: 'those.png', ans: 'Those are', dist: 'far', isPlural: true }
+];
+
+let fullQuizData = [];
 let quizData = [];
 let current = 0;
+
+// 初始化題庫：自動排列組合
+function initBank() {
+    fullQuizData = [];
+    foodItems.forEach(food => {
+        rules.forEach(rule => {
+            const displayName = food.displayName || food.name;
+            const itemImg = rule.isPlural ? `${food.name}s.png` : `${food.name}.png`;
+            
+            let objName, htmlObj;
+            if (rule.isPlural) {
+                objName = displayName + food.pluralSuffix;
+                htmlObj = `${displayName}<span class="plural-s">${food.pluralSuffix}</span>`;
+            } else {
+                objName = `${food.article} ${displayName}`;
+                htmlObj = `<span class="article-a">${food.article}</span> ${displayName}`;
+            }
+
+            fullQuizData.push({
+                bg: rule.bg,
+                item: itemImg,
+                obj: objName,
+                ans: rule.ans,
+                dist: rule.dist,
+                isPlural: rule.isPlural,
+                htmlObj: htmlObj
+            });
+        });
+    });
+}
 
 function speak(text) {
     window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(text);
     msg.lang = 'en-US';
     msg.rate = 0.8;
+
+    // 提高兼容性的語音選擇
     const voices = window.speechSynthesis.getVoices();
-    const bestVoice = voices.find(v => v.name.includes('Samantha')) || voices.find(v => v.lang.startsWith('en'));
-    if (bestVoice) msg.voice = bestVoice;
+    const samantha = voices.find(v => v.name.includes('Samantha'));
+    const googleEn = voices.find(v => v.name.includes('Google US English'));
+    const anyEn = voices.find(v => v.lang.startsWith('en'));
+    
+    msg.voice = samantha || googleEn || anyEn;
     window.speechSynthesis.speak(msg);
 }
 
 function restartGame() {
     current = 0;
-    quizData = [...rawData].sort(() => Math.random() - 0.5).slice(0, 8); // 每次隨機挑 8 題才不會太長
+    // 從題庫隨機挑選 10 題
+    quizData = [...fullQuizData].sort(() => Math.random() - 0.5).slice(0, 10);
     document.getElementById('gameScreen').style.display = 'block';
     document.getElementById('resultScreen').style.display = 'none';
     showQuestion();
 }
 
+function showQuestion() {
+    const item = quizData[current];
+    document.getElementById('bgImg').src = IMG_DIR + item.bg;
+    document.getElementById('itemImg').src = IMG_DIR + item.item;
+    // 初始隱藏顏色標註，增加難度
+    document.getElementById('sentence').innerHTML = `______ ${item.obj}.`;
+    document.getElementById('hint').innerText = "";
+}
+
 function check(choice) {
     const item = quizData[current];
     const hintEl = document.getElementById('hint');
-    const correctBtn = document.getElementById(`btn-${item.ans.replace(' ', '-')}`);
+    const correctBtnId = `btn-${item.ans.replace(' ', '-')}`;
+    const correctBtn = document.getElementById(correctBtnId);
 
     if (choice === item.ans) {
         hintEl.innerText = "🌟 Correct!";
@@ -123,31 +173,36 @@ function check(choice) {
             } else {
                 document.getElementById('gameScreen').style.display = 'none';
                 document.getElementById('resultScreen').style.display = 'block';
-                speak("Wonderful!");
+                speak("Wonderful! You finished the challenge.");
             }
         }, 2500);
     } else {
         speak("Try again");
         correctBtn.style.animation = "none";
-        void correctBtn.offsetWidth;
+        void correctBtn.offsetWidth; // 觸發重繪以重啟動畫
         correctBtn.style.animation = "flash 0.5s 2";
         
-        hintEl.style.color = (item.dist === 'near') ? "#007bff" : "#28a745";
-        hintEl.innerText = (item.dist === 'near' ? "「近」" : "「遠」") + (item.isPlural ? "且「多個」" : "且「一個」");
+        const distText = item.dist === 'near' ? "「近」" : "「遠」";
+        const countText = item.isPlural ? "且「多個」" : "且「一個」";
+        hintEl.style.color = "#e74c3c";
+        hintEl.innerText = `提示：${distText} ${countText}`;
     }
 }
 
-function showQuestion() {
-    const item = quizData[current];
-    document.getElementById('bgImg').src = IMG_DIR + item.bg;
-    document.getElementById('itemImg').src = IMG_DIR + item.item;
-    // 初始顯示不標顏色，答對後才揭曉完整結構
-    document.getElementById('sentence').innerHTML = `______ ${item.obj}.`;
-    document.getElementById('hint').innerText = "";
-}
+// 確保語音列表載入後再開始
+window.speechSynthesis.onvoiceschanged = () => {
+    if (fullQuizData.length === 0) {
+        initBank();
+        restartGame();
+    }
+};
 
-window.speechSynthesis.onvoiceschanged = () => { if (quizData.length === 0) restartGame(); };
-window.onload = () => { if (quizData.length === 0) restartGame(); };
+window.onload = () => {
+    if (fullQuizData.length === 0) {
+        initBank();
+        restartGame();
+    }
+};
 </script>
 </body>
 </html>
