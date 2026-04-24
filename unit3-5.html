@@ -8,19 +8,28 @@
         body { font-family: 'Microsoft JhengHei', sans-serif; text-align: center; background-color: #e8f4f8; padding: 20px; margin: 0; }
         .container { max-width: 800px; margin: auto; background: white; border: 5px solid #333; border-radius: 20px; padding: 20px; box-shadow: 10px 10px 0px #2980b9; }
         
+        /* 調整圖片容器：移除間隔 */
         .image-display-container { 
-            display: flex; justify-content: center; align-items: center; gap: 20px; 
-            background: #fff; border: 4px solid #000; padding: 20px; margin: 0 auto 20px;
-            min-height: 250px; width: 90%;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: #fff; 
+            border: 4px solid #000; 
+            padding: 20px; 
+            margin: 0 auto 20px;
+            min-height: 250px; 
+            width: fit-content; /* 寬度根據圖片自動調整，避免左右空掉 */
+            max-width: 90%;
         }
-        .hand-box, .item-box { flex: 1; display: flex; justify-content: center; align-items: center; }
+        /* 讓左右盒子不要平分空間，改為貼緊圖片 */
+        .hand-box, .item-box { flex: none; display: flex; justify-content: center; align-items: center; }
+        
         #bgImg, #itemImg { max-width: 100%; height: auto; max-height: 220px; display: block; }
         #itemImg { border: 2px solid #eee; border-radius: 10px; }
 
         .sentence-box { font-size: 36px; font-weight: bold; margin: 20px 0; min-height: 50px; }
         .highlight-word { color: #007bff; font-weight: 900; }
         
-        /* 視覺強化標籤 */
         .plural-s { color: red; font-weight: 900; text-decoration: underline; }
         .article-a { color: #FF8C00; font-weight: 900; }
 
@@ -67,18 +76,17 @@
 <script>
 const IMG_DIR = "images/";
 
-// 定義基本物體數據
+// 修正了 sandwich 的複數圖檔邏輯
 const foodItems = [
     { name: 'apple', article: 'an', pluralSuffix: 's' },
     { name: 'orange', article: 'an', pluralSuffix: 's' },
     { name: 'hot_dog', article: 'a', pluralSuffix: 's', displayName: 'hot dog' },
-    { name: 'sandwich', article: 'a', pluralSuffix: 'es' },
+    { name: 'sandwich', article: 'a', pluralSuffix: 'es', pluralImg: 'sandwiches.png' }, // 特別指定複數圖
     { name: 'pizza', article: 'a', pluralSuffix: 's' },
     { name: 'hamburger', article: 'a', pluralSuffix: 's' },
     { name: 'banana', article: 'a', pluralSuffix: 's' }
 ];
 
-// 組合規則
 const rules = [
     { bg: 'this.png', ans: 'This is', dist: 'near', isPlural: false },
     { bg: 'that.png', ans: 'That is', dist: 'far', isPlural: false },
@@ -90,13 +98,19 @@ let fullQuizData = [];
 let quizData = [];
 let current = 0;
 
-// 初始化題庫：自動排列組合
 function initBank() {
     fullQuizData = [];
     foodItems.forEach(food => {
         rules.forEach(rule => {
             const displayName = food.displayName || food.name;
-            const itemImg = rule.isPlural ? `${food.name}s.png` : `${food.name}.png`;
+            
+            // 修正圖檔名稱邏輯
+            let itemImg;
+            if (rule.isPlural) {
+                itemImg = food.pluralImg ? food.pluralImg : `${food.name}s.png`;
+            } else {
+                itemImg = `${food.name}.png`;
+            }
             
             let objName, htmlObj;
             if (rule.isPlural) {
@@ -125,20 +139,15 @@ function speak(text) {
     const msg = new SpeechSynthesisUtterance(text);
     msg.lang = 'en-US';
     msg.rate = 0.8;
-
-    // 提高兼容性的語音選擇
     const voices = window.speechSynthesis.getVoices();
-    const samantha = voices.find(v => v.name.includes('Samantha'));
-    const googleEn = voices.find(v => v.name.includes('Google US English'));
-    const anyEn = voices.find(v => v.lang.startsWith('en'));
-    
-    msg.voice = samantha || googleEn || anyEn;
+    const bestVoice = voices.find(v => v.name.includes('Samantha')) || voices.find(v => v.lang.startsWith('en'));
+    if (bestVoice) msg.voice = bestVoice;
     window.speechSynthesis.speak(msg);
 }
 
 function restartGame() {
     current = 0;
-    // 從題庫隨機挑選 10 題
+    // 確保 10 題中隨機分佈
     quizData = [...fullQuizData].sort(() => Math.random() - 0.5).slice(0, 10);
     document.getElementById('gameScreen').style.display = 'block';
     document.getElementById('resultScreen').style.display = 'none';
@@ -149,7 +158,6 @@ function showQuestion() {
     const item = quizData[current];
     document.getElementById('bgImg').src = IMG_DIR + item.bg;
     document.getElementById('itemImg').src = IMG_DIR + item.item;
-    // 初始隱藏顏色標註，增加難度
     document.getElementById('sentence').innerHTML = `______ ${item.obj}.`;
     document.getElementById('hint').innerText = "";
 }
@@ -173,13 +181,13 @@ function check(choice) {
             } else {
                 document.getElementById('gameScreen').style.display = 'none';
                 document.getElementById('resultScreen').style.display = 'block';
-                speak("Wonderful! You finished the challenge.");
+                speak("Wonderful!");
             }
         }, 2500);
     } else {
         speak("Try again");
         correctBtn.style.animation = "none";
-        void correctBtn.offsetWidth; // 觸發重繪以重啟動畫
+        void correctBtn.offsetWidth;
         correctBtn.style.animation = "flash 0.5s 2";
         
         const distText = item.dist === 'near' ? "「近」" : "「遠」";
@@ -189,20 +197,8 @@ function check(choice) {
     }
 }
 
-// 確保語音列表載入後再開始
-window.speechSynthesis.onvoiceschanged = () => {
-    if (fullQuizData.length === 0) {
-        initBank();
-        restartGame();
-    }
-};
-
-window.onload = () => {
-    if (fullQuizData.length === 0) {
-        initBank();
-        restartGame();
-    }
-};
+window.speechSynthesis.onvoiceschanged = () => { if (fullQuizData.length === 0) { initBank(); restartGame(); } };
+window.onload = () => { if (fullQuizData.length === 0) { initBank(); restartGame(); } };
 </script>
 </body>
 </html>
