@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>國語考卷產生器-V15</title>
+    <title>國語考卷產生器-V16</title>
     <style>
         @page { size: A4 landscape; margin: 8mm; }
         body { font-family: "DFKai-SB", "BiauKai", "標楷體", serif; margin: 0; background: #eee; }
@@ -19,67 +19,63 @@
             writing-mode: vertical-rl; column-count: 2; column-fill: auto;
             column-rule: 1.5pt solid #000; column-gap: 15mm;
         }
-        .header { border-left: 5px double #000; padding-left: 10px; margin-left: 25px; }
+        .header { border-left: 5px double #000; padding-left: 10px; margin-left: 20px; }
         .title { font-size: 20pt; font-weight: bold; }
-        .content { font-size: 16pt; line-height: 3; text-align: justify; }
-        .type-title { font-size: 18pt; font-weight: bold; border: 1.5pt solid #000; padding: 5px 0; margin-left: 15px; display: inline-block; break-inside: avoid; }
-/* 僅讓半形數字正立的樣式 */
-.only-num-upright {
-    text-orientation: upright;
-    display: inline-block;
-    vertical-align: middle; /* 修正對齊中線 */
-    margin: 0 -1px; /* 稍微縮小與括號的間距 */
-    font-family: Arial, sans-serif; /* 半形數字建議換成無襯線字體較美觀 */
-}
+        
+        /* 預設行距縮小 */
+        .content { font-size: 16pt; line-height: 1.8; text-align: justify; }
+        
+        /* 大題標題樣式 */
+        .type-title { 
+            font-size: 18pt; font-weight: bold; border: 1.5pt solid #000; 
+            padding: 5px 0; margin-left: 10px; margin-top: 10px;
+            display: inline-block; break-inside: avoid; 
+        }
+
+        /* 第二大題之後的字體縮小與緊湊行距 */
+        .small-font-mode { font-size: 14pt !important; line-height: 1.5 !important; }
+
+        /* 數字正立樣式 */
+        .only-num-upright {
+            text-orientation: upright;
+            display: inline-block;
+            vertical-align: baseline;
+            margin: 0 1px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+        }
+
+        /* 第一大題專用樣式 (維持原本規格) */
         .char-unit { 
-    display: inline-flex; /* 改用 flex 讓內部元件並排 */
-    flex-direction: row-reverse; /* 讓注音在右，框在左 */
-    align-items: flex-start; /* 頂端對齊 */
-    margin: 0 2px;
-    width: 3.2em;
-    writing-mode: horizontal-tb; 
-    vertical-align: middle;
-}
+            display: inline-flex; flex-direction: row-reverse; 
+            align-items: flex-start; margin: 0 2px; width: 3.2em;
+            writing-mode: horizontal-tb; vertical-align: middle;
+        }
+        .main-box { 
+            width: 2.2em; height: 2.2em; border: 1.5pt solid #000; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 18pt; box-sizing: border-box; 
+        }
+        .side-box { 
+            width: 1.1em; height: 2.2em; border-left: 1pt solid #000; 
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; font-size: 11pt; line-height: 0.9;
+            writing-mode: vertical-rl; text-orientation: upright;
+            position: relative; box-sizing: border-box; white-space: nowrap;
+        }
+        .tone-mark {
+            position: absolute; right: -0.45em; top: 50%; 
+            transform: translateY(-50%); font-size: 9pt; writing-mode: vertical-rl;
+        }
 
-.main-box { 
-    width: 2.2em; 
-    height: 2.2em; 
-    border: 1.5pt solid #000; 
-    display: flex; /* 改用 flex 居中文字 */
-    align-items: center; 
-    justify-content: center; 
-    font-size: 18pt;
-    box-sizing: border-box; /* 確保邊框不撐大盒子 */
-}
-
-.side-box { 
-    width: 1.1em; /* 稍微加寬 0.2em，確保 4 個符號有足夠空間 */
-    height: 2.2em; 
-    border-left: 1pt solid #000; 
-    display: flex; 
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    font-size: 11pt; 
-    line-height: 0.9; /* 縮小行高，讓 3 個注音符號擠在 2.2em 內不溢出 */
-    writing-mode: vertical-rl;
-    text-orientation: upright;
-    position: relative;
-    box-sizing: border-box;
-    white-space: nowrap; /* 強制不換行 */
-}
-
-/* 聲調定位微調，確保 4 個字時不會重疊 */
-.tone-mark {
-    position: absolute;
-    right: -0.45em; 
-    top: 50%; 
-    transform: translateY(-50%); 
-    font-size: 9pt;
-    writing-mode: vertical-rl;
-}
-        .blank-line { color: #000; letter-spacing: 2px; line-height: 1.2; margin-bottom: 30px; display: block; border-bottom: 1px dashed #999; padding-bottom: 5px; }
-        .question-line { display: block; margin-bottom: 10px; }
+        /* 空白行樣式 */
+        .blank-line { 
+            color: #000; letter-spacing: 2px; line-height: 1.2; 
+            margin-left: 25px; /* 增加與下一題的間距 */
+            display: block; border-bottom: 1px dashed #999; padding-bottom: 5px; 
+            min-height: 1.5em;
+        }
+        .question-line { display: block; margin-bottom: 5px; }
         .phonetic { font-size: 14pt; vertical-align: super; }
 
         @media print { #ui-layer { display: none; } #paper-container { padding: 0; } .page { box-shadow: none; margin: 0; } }
@@ -88,8 +84,8 @@
 <body>
 
 <div id="ui-layer">
-    <strong>國語考卷產生器 (V15 造句與聲調最終修正版)</strong>
-    <textarea id="rawInput"></textarea>
+    <strong>國語考卷產生器 (V16 行距與字體優化版)</strong>
+    <textarea id="rawInput" placeholder="請貼上 NotebookLM 產出的內容..."></textarea>
     <div class="btns">
         <button class="btn-gen" onclick="generate()">產生預覽</button>
         <button class="btn-print" onclick="window.print()">列印 PDF</button>
@@ -110,7 +106,6 @@ function renderSideBoxContent(str) {
     const tones = ['ˊ', 'ˇ', 'ˋ', '˙'];
     let mainPhonetic = str;
     let toneMark = '';
-    
     let lastChar = str.slice(-1);
     if (tones.includes(lastChar)) {
         mainPhonetic = str.slice(0, -1);
@@ -123,20 +118,26 @@ function generate() {
     const text = document.getElementById('rawInput').value;
     const lines = text.split('\n');
     let finalHtml = '';
-    let isGrammarMode = false;
+    let currentMainTitleCount = 0; // 用來計算目前是第幾個大題
+    let isBlankLineMode = false; // 是否需要產生空白行（造句/造樣造句）
 
     lines.forEach(line => {
         let trimmed = line.trim();
         if (!trimmed) return;
 
-        // 偵測大題：支援「一、」、「第一大題」、「造句」等關鍵字
-        if (/^[一二三四五六七八九十][、. ]/.test(trimmed) || trimmed.includes('大題') || trimmed.includes('部分')) {
-            isGrammarMode = trimmed.includes('造句') || trimmed.includes('造樣造句');
+        // 偵測大題
+        if (/^[一二三四五六七八九十][、. ]/.test(trimmed) || trimmed.includes('大題')) {
+            currentMainTitleCount++;
+            // 判斷是否為造句或造樣造句大題
+            isBlankLineMode = trimmed.includes('造句') || trimmed.includes('造樣造句');
             finalHtml += `<div class="type-title">${trimmed}</div>`;
             return;
         }
 
-        // 處理 [[內容(mode)]]
+        // 判斷是否套用小字體 (第二大題開始)
+        let lineClass = (currentMainTitleCount > 1) ? "question-line small-font-mode" : "question-line";
+
+        // 處理 [[內容(mode)]] (僅第一大題會用到)
         let processedLine = trimmed.replace(/\[\[(.*?)\((mode[12])\)\]\]/g, function(m, p1, mode) {
             let units = '';
             if (mode === 'mode1') {
@@ -150,25 +151,29 @@ function generate() {
             return units;
         });
 
-        // 處理括號內的注音顯示
+        // 處理括號內的注音
         processedLine = processedLine.replace(/[（\(]([ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦㄧㄨㄩˊˇˋ˙ ]+)[）\)]/g, 
             '<span class="phonetic">（$1）</span>');
 
-// 在 generate() 函數內加入這一行
-// 它會尋找括號內的數字，並只對數字部分包覆標籤
-processedLine = processedLine.replace(/\(([0-9]+)\)/g, '(<span class="only-num-upright">$1</span>)');
+        // 數字直書處理 (包含括號內的數字)
+        processedLine = processedLine.replace(/([0-9]+)/g, '<span class="only-num-upright">$1</span>');
 
-        // 造句邏輯：若在造句大題且行內有括號，生成空白練習行
-        if (isGrammarMode && (processedLine.includes('(') || processedLine.includes('（'))) {
-            finalHtml += `<div class="question-line">${processedLine}</div>`;
-            let blankLine = processedLine.replace(/[\(（](.*?)[\)）]/g, function(m, p1) {
-                // 移除 HTML 標籤後計算文字長度
-                let plainText = p1.replace(/<[^>]*>?/gm, '');
-                return "（" + "　".repeat(plainText.length + 3) + "）";
-            });
-            finalHtml += `<div class="blank-line">${blankLine}</div>`;
-        } else {
-            finalHtml += `<div class="question-line">${processedLine}</div>`;
+        // 輸出題目行
+        finalHtml += `<div class="${lineClass}">${processedLine}</div>`;
+
+        // 產生空白練習行邏輯
+        if (isBlankLineMode) {
+            if (trimmed.includes('（') || trimmed.includes('(')) {
+                // 造樣造句：依照括號內字數給空白
+                let blankLineContent = processedLine.replace(/[（\(](.*?)[）\)]/g, function(m, p1) {
+                    let textOnly = p1.replace(/<[^>]*>?/gm, ''); // 移除可能的 HTML tag
+                    return "（" + "　".repeat(textOnly.length + 2) + "）";
+                });
+                finalHtml += `<div class="blank-line">${blankLineContent}</div>`;
+            } else {
+                // 一般造句：給一段標準空白線
+                finalHtml += `<div class="blank-line">　　　　　　　　　</div>`;
+            }
         }
     });
 
