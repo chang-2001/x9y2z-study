@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>台灣觀光導覽地圖</title>
+    <title>台灣觀光導覽地圖 V3.2</title>
     <style>
         :root {
             --主色調: #ff7e5f;
             --背景色: #fffcf5;
             --卡片色: #ffffff;
+            --裝飾色: #d35400;
+            --連結色: #4285F4;
+            --政府網連結: #27ae60;
         }
 
         body {
@@ -17,12 +20,12 @@
             margin: 0;
             padding: 20px;
             color: #444;
+            line-height: 1.6;
         }
 
-        /* 頂部地圖區塊：左右並排 */
         .頂部地圖區 {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 左右各半 */
+            grid-template-columns: 1fr 1fr;
             gap: 20px;
             max-width: 1400px;
             margin: 0 auto 30px auto;
@@ -34,6 +37,7 @@
             border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             text-align: center;
+            border: 1px solid #f0f0f0;
         }
 
         .地圖標題 {
@@ -47,9 +51,11 @@
             height: auto;
             border-radius: 10px;
             display: block;
+            transition: transform 0.3s;
         }
 
-        /* 下方導覽清單 */
+        .地圖圖片:hover { transform: scale(1.02); }
+
         .主容器 {
             max-width: 1400px;
             margin: 0 auto;
@@ -57,50 +63,103 @@
 
         .導覽區 {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 25px;
         }
 
         .縣市卡片 {
             background: var(--卡片色);
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 18px;
+            padding: 22px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
             border: 1px solid #ffe8e2;
+            display: flex;
+            flex-direction: column;
         }
 
         .縣市名稱 {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             color: #e67e22;
             border-bottom: 2px dashed #ffd3c9;
             padding-bottom: 10px;
             margin-bottom: 15px;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .名產區塊 {
+            background: #fff5e6;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: var(--裝飾色);
+            margin-bottom: 15px;
+            border-left: 4px solid var(--裝飾色);
+        }
+
+        .秘密內容 {
+            margin-top: 5px;
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        /* 景點容器改為相對定位，方便內部連結定位 */
+        .景點容器 {
+            position: relative;
+            margin: 8px 0;
         }
 
         .景點按鈕 {
             display: block;
             text-decoration: none;
             color: #555;
-            padding: 10px 15px;
-            margin: 8px 0;
-            border-radius: 10px;
-            background: #fff9f8;
+            padding: 12px 15px 35px 15px; /* 增加底部內距給下方連結 */
+            border-radius: 12px;
+            background: #ffffff;
             border: 1px solid #ffefe0;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
 
         .景點按鈕:hover {
-            background: #ff7e5f;
-            color: white;
-            transform: scale(1.03);
+            background: #fff0ed;
+            border-color: var(--主色調);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 12px rgba(255, 126, 95, 0.15);
         }
 
-        .景點按鈕 small {
-            display: block;
-            font-size: 0.8rem;
-            margin-top: 4px;
-            opacity: 0.8;
+        .景點按鈕 strong { color: #333; display: block; margin-bottom: 4px; }
+        .景點按鈕 small { display: block; font-size: 0.85rem; color: #777; }
+        
+        .照片提示 { 
+            display: inline-block; 
+            margin-top: 8px; 
+            font-size: 0.75rem; 
+            color: var(--連結色); 
+            font-weight: bold; 
+        }
+
+        /* 交通部觀光網連結樣式 */
+        .政府網連結 {
+            position: absolute;
+            bottom: 12px;
+            right: 15px;
+            font-size: 0.75rem;
+            color: var(--政府網連結);
+            text-decoration: none;
+            font-weight: bold;
+            z-index: 2; /* 確保在按鈕上方 */
+            background: rgba(255,255,255,0.8);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        .政府網連結:hover {
+            text-decoration: underline;
+            color: #1e8449;
         }
 
         @media (max-width: 800px) {
@@ -122,63 +181,153 @@
 </div>
 
 <div class="主容器">
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #d85a5a;">🗺️ 景點導覽清單</h2>
-        <p>點擊景點名稱即可開啟 Google 地圖導航</p>
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="color: #d85a5a; font-size: 2rem;">🗺️ 台灣旅遊導覽</h2>
+        <p style="color: #666;">點擊景點卡片看實景，或點擊右下角查看官方介紹</p>
     </div>
     <div class="導覽區" id="listBody"></div>
 </div>
 
 <script>
+    // JSON Layout 保持如下，你可以手動修改裡面的 "連結"
     const 觀光資料 = [
-        { 縣市: "基隆市", 名產: "營養三明治、泡泡冰", 景點: [{ 名稱: "正濱漁港", 描述: "成排彩色房屋，獨特人文風貌" }] },
-        { 縣市: "新北市", 名產: "三峽藍染、綠竹筍、鶯歌陶瓷", 景點: [
-            { 名稱: "野柳地質公園", 描述: "仙女鞋、女王頭奇岩怪石" },
-            { 名稱: "三峽老街", 描述: "古色古香的歷史街道" },
-            { 名稱: "石門區海岸", 描述: "海岸岩石布滿海藻" }
-        ]},
-        { 縣市: "桃園市", 名產: "大溪豆乾", 景點: [{ 名稱: "大溪橋", 描述: "西式風格造景橋梁" }] },
-        { 縣市: "新竹縣市", 名產: "米粉、貢丸、柿餅", 景點: [
-            { 名稱: "北埔老街", 描述: "體驗客家擂茶聚落文化" },
-            { 名稱: "新竹車站", 描述: "歷史悠久的重要建築" }
-        ]},
-        { 縣市: "苗栗縣", 名產: "大湖草莓、公館紅棗、三義木雕", 景點: [{ 名稱: "銅鑼鄉山區", 描述: "四、五月油桐花「五月雪」" }] },
-        { 縣市: "臺中市", 名產: "太陽餅、大甲奶油酥餅、南屯麻芛", 景點: [
-            { 名稱: "臺中公園湖心亭", 描述: "慶祝縱貫鐵路通車設施" },
-            { 名稱: "臺中國家歌劇院", 描述: "世界級建築藝術" },
-            { 名稱: "高美溼地", 描述: "絕美夕陽景點" },
-            { 名稱: "大甲區", 描述: "著名的媽祖遶境活動" }
-        ]},
-        { 縣市: "彰化縣", 名產: "大村葡萄", 景點: [{ 名稱: "八卦山大佛", 描述: "莊嚴的地標景觀" }] },
-        { 縣市: "南投縣", 名產: "埔里手工紙、魚池茶葉、信義鄉梅子", 景點: [
-            { 名稱: "日月潭", 描述: "優美山光水色" },
-            { 名稱: "玉山", 描述: "全臺第一高峰" },
-            { 名稱: "登瀛書院", 描述: "祈求考試順利" }
-        ]},
-        { 縣市: "雲林縣", 名產: "西螺醬油", 景點: [{ 名稱: "西螺大橋", 描述: "遠近馳名的紅色大橋" }] },
-        { 縣市: "嘉義縣", 名產: "布袋虱目魚、火雞肉飯", 景點: [{ 名稱: "阿里山", 描述: "搭火車看日出聞名" }] },
-        { 縣市: "臺南市", 名產: "玉井芒果乾", 景點: [{ 名稱: "七股溼地", 描述: "黑面琵鷺來臺度冬棲地" }] },
-        { 縣市: "高雄市", 名產: "美濃油紙傘", 景點: [
-            { 名稱: "茂林區", 描述: "冬天紫斑蝶度冬奇觀" },
-            { 名稱: "高雄港", 描述: "臺灣最大貨櫃港" },
-            { 名稱: "愛河", 描述: "浪漫河岸風光" }
-        ]},
-        { 縣市: "屏東縣", 名產: "林邊蓮霧、三地門皮雕、老鷹紅豆", 景點: [{ 名稱: "墾丁國家公園", 描述: "陸蟹安全過馬路生態廊道" }] },
-        { 縣市: "宜蘭縣", 名產: "三星蔥、金棗", 景點: [
-            { 名稱: "翠峰湖", 描述: "高山湖泊自然生態" },
-            { 名稱: "龜山島", 描述: "著名海上島嶼" }
-        ]},
-        { 縣市: "花蓮縣", 名產: "壽豐西瓜、麻糬", 景點: [{ 名稱: "太魯閣大峽谷", 描述: "壯觀高山與峽谷景色" }] },
-        { 縣市: "臺東縣", 名產: "釋迦、金針花、成功鎮柴魚片", 景點: [
-            { 名稱: "蘭嶼軍艦岩", 描述: "外形奇特的軍艦岩石" },
-            { 名稱: "綠島", 描述: "獨特的火山岩地形" }
-        ]},
-        { 縣市: "澎湖縣", 名產: "黑糖糕", 景點: [{ 名稱: "七美鄉雙心石滬", 描述: "傳統捕魚陷阱" }] },
-        { 縣市: "金門縣", 名產: "金門鋼刀、貢糖、大麴酒", 景點: [{ 名稱: "翟山坑道", 描述: "壯觀的水上軍事坑道" }] },
-        { 縣市: "連江縣", 名產: "馬祖酥、繼光餅", 景點: [
-            { 名稱: "馬祖南竿海邊", 描述: "絕美藍眼淚奇景" },
-            { 名稱: "八八坑道", 描述: "儲存大麴酒的絕佳地點" }
-        ]}
+        { 
+            縣市: "基隆市", 
+            名產: "營養三明治、泡泡冰", 
+            秘密: "正濱漁港擁有彩色建築屋，展現獨特人文風貌。",
+            景點: [{ 名稱: "正濱漁港", 描述: "成排彩色房屋，展現獨特人文風貌", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0042291&uid=93" }] 
+        },
+        { 
+            縣市: "新北市", 
+            名產: "三峽藍染、鶯歌陶瓷", 
+            秘密: "三峽過去盛產藍草；鶯歌因優質黏土成為陶瓷之都。",
+            景點: [
+                { 名稱: "野柳地質公園", 描述: "仙女鞋、女王頭奇岩怪石", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001016&id=A12-00268" },
+                { 名稱: "三峽老街", 描述: "古色古香的歷史街道", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001091&id=R13" },
+                { 名稱: "石門洞", 描述: "海岸岩石布滿海藻", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001016&id=A12-00652" }
+            ]
+        },
+        { 
+            縣市: "桃園市", 
+            名產: "大溪豆乾", 
+            秘密: "大溪橋歷史悠久，早期為方便居民通行所建。",
+            景點: [{ 名稱: "大溪橋", 描述: "西式風格造景橋梁", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001107&id=A12-00244" }] 
+        },
+        { 
+            縣市: "新竹縣市", 
+            名產: "米粉、貢丸、柿餅", 
+            秘密: "北埔可體驗客家擂茶文化；新竹車站是歷史悠久的重要建築。",
+            景點: [
+                { 名稱: "北埔老街", 描述: "體驗客家擂茶聚落文化", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0042269&jid=970" },
+                { 名稱: "新竹車站", 描述: "歷史悠久的重要建築", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001108&id=A12-00216" }
+            ]
+        },
+        { 
+            縣市: "苗栗縣", 
+            名產: "大湖草莓、三義木雕", 
+            秘密: "過去三義山多樟木，日人教導技藝後衍生出雕刻文化。",
+            景點: [{ 名稱: "銅鑼鄉山區", 描述: "四、五月油桐花「五月雪」", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001110&id=2196" }] 
+        },
+        { 
+            縣市: "臺中市", 
+            名產: "太陽餅、大甲奶油酥餅", 
+            秘密: "中部地區是台灣重要的糕餅文化發源地。",
+            景點: [
+                { 名稱: "臺中公園湖心亭", 描述: "慶祝縱貫鐵路通車設施", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001016&id=A12-00079" },
+                { 名稱: "臺中國家歌劇院", 描述: "世界級建築藝術", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001112&id=A12-00235" },
+                { 名稱: "高美溼地", 描述: "絕美夕陽景點", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001016&id=R117" },
+                { 名稱: "大甲區", 描述: "著名的媽祖遶境活動", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001022" }
+            ]
+        },
+        { 
+            縣市: "南投縣", 
+            名產: "埔里手工紙、魚池茶葉", 
+            秘密: "埔里過去因水質純淨成為重要造紙基地。",
+            景點: [
+                { 名稱: "日月潭", 描述: "優美山光水色", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0000120&jid=975" },
+                { 名稱: "玉山", 描述: "全臺第一高峰", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0042808" },
+                { 名稱: "登瀛書院", 描述: "祈求考試順利", 連結: "" }
+            ]
+        },
+        { 
+            縣市: "雲林縣", 
+            名產: "西螺醬油", 
+            秘密: "利用黑豆遵循古法，曝曬加工而成的純釀技術。",
+            景點: [{ 名稱: "西螺大橋", 描述: "遠近馳名的紅色大橋", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001115&id=9493" }] 
+        },
+        { 
+            縣市: "嘉義縣", 
+            名產: "布袋虱目魚、火雞肉飯", 
+            秘密: "阿里山以搭乘交通工具上山「看日出」聞名。",
+            景點: [{ 名稱: "阿里山", 描述: "搭火車看日出聞名", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001016&id=250" }] 
+        },
+        { 
+            縣市: "臺南市", 
+            名產: "玉井芒果乾", 
+            秘密: "七股溼地是黑面琵鷺來臺群聚度冬的重要棲地。",
+            景點: [{ 名稱: "七股溼地", 描述: "黑面琵鷺來臺度冬棲地", 連結: "https://www.taiwan.net.tw/m1.aspx?sno=0001119&id=10349&print=1" }] 
+        },
+        { 
+            縣市: "高雄市", 
+            名產: "美濃油紙傘", 
+            秘密: "客家文化中，紙傘代表團圓與多子多孫的祝福。",
+            景點: [
+                { 名稱: "茂林區", 描述: "冬天紫斑蝶度冬奇觀", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0042274" },
+                { 名稱: "高雄港", 描述: "臺灣最大貨櫃港", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001121&id=9351" },
+                { 名稱: "愛河", 描述: "浪漫河岸風光", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001121&id=625" }
+            ]
+        },
+        { 
+            縣市: "屏東縣", 
+            名產: "三地門皮雕", 
+            秘密: "墾丁香蕉灣路段設有生態廊道保護陸蟹過馬路產卵。",
+            景點: [{ 名稱: "墾丁國家公園", 描述: "陸蟹安全過馬路生態廊道", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001016&id=421" }] 
+        },
+        { 
+            縣市: "宜蘭縣", 
+            名產: "三星蔥、金棗", 
+            秘密: "翠峰湖水質清澈，是著名的景觀高山湖泊。",
+            景點: [
+                { 名稱: "翠峰湖", 描述: "高山湖泊自然生態", 連結: "https://www.taiwan.net.tw/m1.aspx?sno=0001106&id=618" },
+                { 名稱: "龜山島", 描述: "著名海上島嶼", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001106&id=C100_164" }
+            ]
+        },
+        { 
+            縣市: "花蓮縣", 
+            名產: "壽豐西瓜、麻糬", 
+            秘密: "擁有極為壯觀的高山和峽谷景色。",
+            景點: [{ 名稱: "太魯閣大峽谷", 描述: "壯觀高山與峽谷景色", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001124&id=R43" }] 
+        },
+        { 
+            縣市: "臺東縣", 
+            名產: "成功鎮柴魚片、釋迦", 
+            秘密: "蘭嶼軍艦岩外形奇特，形似軍艦。",
+            景點: [
+                { 名稱: "蘭嶼軍艦岩", 描述: "外形奇特的軍艦岩石", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001123&id=650" },
+                { 名稱: "綠島", 描述: "獨特的火山岩地形", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001123&id=243" }
+            ]
+        },
+        { 
+            縣市: "澎湖縣", 
+            名產: "黑糖糕", 
+            秘密: "七美雙心石滬是利用海邊礁石排成的傳統捕魚陷阱。",
+            景點: [{ 名稱: "七美鄉雙心石滬", 描述: "傳統捕魚陷阱", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001125&id=A12-00278" }] 
+        },
+        { 
+            縣市: "金門縣", 
+            名產: "鋼刀、貢糖", 
+            秘密: "利用八二三砲戰遺留下的砲彈片打造菜刀，是獨特的工藝。",
+            景點: [{ 名稱: "翟山坑道", 描述: "壯觀的水上軍事坑道", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001126&id=C100_230" }] 
+        },
+        { 
+            縣市: "連江縣", 
+            名產: "馬祖酥、繼光餅", 
+            秘密: "南竿海邊春末夏初可觀賞到猶如星星掉進海裡的「藍眼淚」。",
+            景點: [
+                { 名稱: "馬祖南竿海邊", 描述: "絕美藍眼淚奇景", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0042291&uid=105" },
+                { 名稱: "八八坑道", 描述: "儲存大麴酒的絕佳地點", 連結: "https://www.taiwan.net.tw/m1.aspx?sNo=0001016&id=10447" }
+            ]
+        }
     ];
 
     const 容器 = document.getElementById('listBody');
@@ -188,20 +337,26 @@
         卡片.className = '縣市卡片';
         
         let 內容HTML = `
-            <div class="縣市名稱">${項目.縣市}</div>
-            <div style="background: #fff5e6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem; color: #d35400; margin-bottom: 12px;">
-                🎁 <strong>在地名產：</strong>${項目.名產}
+            <div class="縣市名稱">${項目.縣市} <span>🇹🇼</span></div>
+            <div class="名產區塊">
+                <strong>🎁 在地名產：</strong>${項目.名產}
+                <div class="秘密內容">🤫 秘密：${項目.秘密}</div>
             </div>
         `;
         
         項目.景點.forEach(景點 => {
-            // 修正 Google 地圖連結
-            const 地圖網址 = `https://www.google.com/maps/search/${encodeURIComponent(項目.縣市 + ' ' + 景點.名稱)}`;
+            const 搜尋關鍵字 = encodeURIComponent(項目.縣市 + " " + 景點.名稱);
+            const 地圖連結 = `https://www.google.com/maps/search/?api=1&query=${搜尋關鍵字}`;
+            
             內容HTML += `
-                <a href="${地圖網址}" target="_blank" class="景點按鈕">
-                    <strong>📍 ${景點.名稱}</strong>
-                    <small>${景點.描述}</small>
-                </a>
+                <div class="景點容器">
+                    <a href="${地圖連結}" target="_blank" class="景點按鈕">
+                        <strong>📍 ${景點.名稱}</strong>
+                        <small>${景點.描述}</small>
+                        <span class="照片提示">📸 查看實景照片流</span>
+                    </a>
+                    <a href="${景點.連結}" target="_blank" class="政府網連結">交通部觀光網</a>
+                </div>
             `;
         });
         
