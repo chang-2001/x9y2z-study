@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Unit 4-6: It is or They are?</title>
+    <style>
+        body { font-family: 'Microsoft JhengHei', sans-serif; text-align: center; background-color: #fef5e7; padding: 20px; margin: 0; }
+        .container { max-width: 800px; margin: auto; background: white; border: 5px solid #333; border-radius: 20px; padding: 20px; box-shadow: 10px 10px 0px #e67e22; }
+        
+        .image-box { width: 100%; height: 250px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; background: #fff; border: 3px dashed #f39c12; border-radius: 15px; }
+        .image-box img { max-height: 90%; border-radius: 10px; }
+
+        .sentence-box { font-size: 42px; font-weight: bold; margin: 20px 0; min-height: 60px; color: #2c3e50; }
+        .blank { border-bottom: 3px solid #333; display: inline-block; min-width: 100px; margin: 0 10px; color: #e67e22; }
+        .plural-s { color: red; text-decoration: underline; font-weight: 900; }
+
+        .quiz-controls { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
+        .option-group { flex: 1; background: #fffdf9; padding: 15px; border: 3px solid #f1c40f; border-radius: 15px; }
+        .option-group h3 { margin-top: 0; color: #7f8c8d; font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        
+        .btn-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        button { padding: 15px; font-size: 24px; cursor: pointer; background-color: #fff; border: 3px solid #333; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 0 #333; transition: 0.1s; }
+        button.selected { background-color: #ffeb3b; transform: translateY(2px); box-shadow: 0 2px 0 #333; border-color: #e67e22; }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        
+        .check-btn { margin-top: 30px; padding: 20px; font-size: 28px; background-color: #e67e22; color: white; width: 100%; border: 3px solid #333; border-radius: 15px; cursor: pointer; font-weight: 900; }
+        .check-btn:hover { background-color: #d35400; }
+
+        .hint { font-size: 22px; margin-top: 15px; font-weight: bold; height: 60px; display: flex; align-items: center; justify-content: center; }
+        .success-text { color: #27ae60; font-size: 32px; }
+        .error-text { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="gameScreen">
+    <h2>Unit 4-6: Is / Are 句子大挑戰</h2>
+    <div class="image-box"><img id="mainImg" src=""></div>
+    
+    <div class="sentence-box">
+        <span id="subjectText">It</span> 
+        <span id="verbBlank" class="blank">?</span> 
+        <span id="nounBlank" class="blank">?</span>.
+    </div>
+
+    <div class="quiz-controls">
+        <div class="option-group">
+            <h3>1. 選動詞</h3>
+            <div class="btn-grid">
+                <button id="v-is" onclick="selectVerb('is', this)">is</button>
+                <button id="v-are" onclick="selectVerb('are', this)">are</button>
+            </div>
+        </div>
+        <div class="option-group">
+            <h3>2. 選東西</h3>
+            <div id="nounOptions" class="btn-grid"></div>
+        </div>
+    </div>
+    
+    <div id="hint" class="hint"></div>
+    <button class="check-btn" onclick="checkAnswer()">確認答案</button>
+</div>
+
+<div class="container" id="resultScreen" style="display:none;">
+    <h1 style="font-size: 60px; color: #27ae60;">🎉 Good job!</h1>
+    <p style="font-size: 24px;">你太棒了！已經完全分得清楚 Is 和 Are 了！</p>
+    <div style="margin-top: 30px;">
+        <button onclick="restartGame()" style="padding: 20px 50px; background-color: #2ecc71; color: white;">再玩一次</button>
+        <button onclick="location.href='index.html'" style="padding: 20px 50px; background-color: #3498db; color: white; margin-left: 10px;">回首頁</button>
+    </div>
+</div>
+
+<script>
+const IMG_DIR = "images/";
+const foodItems = [
+    { name: 'apple', single: 'an apple', plural: 'apples' },
+    { name: 'orange', single: 'an orange', plural: 'oranges' },
+    { name: 'hot_dog', single: 'a hot dog', plural: 'hot dogs' },
+    { name: 'sandwich', single: 'a sandwich', plural: 'sandwiches' },
+    { name: 'pizza', single: 'a pizza', plural: 'pizzas' },
+    { name: 'hamburger', single: 'a hamburger', plural: 'hamburgers' },
+    { name: 'banana', single: 'a banana', plural: 'bananas' }
+];
+
+let quizData = [];
+let current = 0;
+let userVerb = "";
+let userNoun = "";
+
+function speak(text) {
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = 'en-US';
+    msg.rate = 0.8;
+    const voices = window.speechSynthesis.getVoices();
+    const bestVoice = voices.find(v => v.name.includes('Samantha')) || voices.find(v => v.lang.startsWith('en'));
+    if (bestVoice) msg.voice = bestVoice;
+    window.speechSynthesis.speak(msg);
+}
+
+// 初始化並「隨機」題庫
+function initQuiz() {
+    let allPossible = [];
+    foodItems.forEach(item => {
+        // 單數情況 (It is)
+        allPossible.push({
+            img: `${item.name}.png`,
+            subject: 'It',
+            correctVerb: 'is',
+            correctNoun: item.single,
+            options: [item.single, item.plural],
+            fullText: `It is ${item.single}`
+        });
+        // 複數情況 (They are)
+        let pluralImg = item.name === 'sandwich' ? 'sandwiches.png' : `${item.name}s.png`;
+        allPossible.push({
+            img: pluralImg,
+            subject: 'They',
+            correctVerb: 'are',
+            correctNoun: item.plural,
+            options: [item.single, item.plural],
+            fullText: `They are ${item.plural}`
+        });
+    });
+
+    // 隨機打亂所有題目，並選出 8 題
+    quizData = allPossible.sort(() => Math.random() - 0.5).slice(0, 8);
+}
+
+function restartGame() {
+    current = 0;
+    initQuiz();
+    document.getElementById('gameScreen').style.display = 'block';
+    document.getElementById('resultScreen').style.display = 'none';
+    showQuestion();
+}
+
+function showQuestion() {
+    const item = quizData[current];
+    userVerb = "";
+    userNoun = "";
+    
+    document.getElementById('mainImg').src = IMG_DIR + item.img;
+    document.getElementById('subjectText').innerText = item.subject;
+    document.getElementById('verbBlank').innerText = "?";
+    document.getElementById('nounBlank').innerText = "?";
+    document.getElementById('hint').innerText = "";
+
+    // 清除按鈕選取樣式
+    document.querySelectorAll('.btn-grid button').forEach(b => b.classList.remove('selected'));
+
+    // 生成名詞按鈕 (選項也會隨機左右互換)
+    const nounContainer = document.getElementById('nounOptions');
+    nounContainer.innerHTML = "";
+    let shuffledOptions = [...item.options].sort(() => Math.random() - 0.5);
+    shuffledOptions.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.innerText = opt;
+        btn.onclick = () => selectNoun(opt, btn);
+        nounContainer.appendChild(btn);
+    });
+}
+
+function selectVerb(verb, btn) {
+    userVerb = verb;
+    document.getElementById('verbBlank').innerText = verb;
+    document.querySelectorAll('.option-group:first-child button').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function selectNoun(noun, btn) {
+    userNoun = noun;
+    document.getElementById('nounBlank').innerText = noun;
+    document.querySelectorAll('#nounOptions button').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function checkAnswer() {
+    const item = quizData[current];
+    const hintEl = document.getElementById('hint');
+
+    if (!userVerb || !userNoun) {
+        hintEl.innerHTML = `<span class="error-text">請選好兩個答案喔！</span>`;
+        return;
+    }
+
+    if (userVerb === item.correctVerb && userNoun === item.correctNoun) {
+        hintEl.innerHTML = `<span class="success-text">🌟 Good job!</span>`;
+        
+        // 視覺標註複數 s
+        let nounDisplay = item.correctNoun;
+        if (item.subject === 'They') {
+            nounDisplay = nounDisplay.replace(/s$/, '<span class="plural-s">s</span>').replace(/es$/, '<span class="plural-s">es</span>');
+        }
+        document.getElementById('nounBlank').innerHTML = nounDisplay;
+
+        speak(item.fullText);
+
+        setTimeout(() => {
+            current++;
+            if (current < quizData.length) {
+                showQuestion();
+            } else {
+                document.getElementById('gameScreen').style.display = 'none';
+                document.getElementById('resultScreen').style.display = 'block';
+                speak("Good job! You finished the challenge!");
+            }
+        }, 2500);
+    } else {
+        speak("Try again");
+        let tip = "";
+        if (userVerb !== item.correctVerb) {
+            tip = item.subject === "It" ? "提示：It (一個) 要配 is 喔！" : "提示：They (多個) 要配 are 喔！";
+        } else {
+            tip = item.subject === "It" ? "提示：這只有一個，不能加 s 喔！" : "提示：這有很多個，要選有 s 的單字！";
+        }
+        hintEl.innerHTML = `<span class="error-text">${tip}</span>`;
+    }
+}
+
+// 初始化遊戲
+window.onload = restartGame;
+</script>
+</body>
+</html>
