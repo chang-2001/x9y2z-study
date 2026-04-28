@@ -19,47 +19,45 @@
             color: #444;
         }
 
-        header {
-            text-align: center;
-            padding: 30px;
-            background: linear-gradient(135deg, #ff9a9e, #fecfef);
-            color: #d85a5a;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        .主容器 {
-            max-width: 1200px;
-            margin: 0 auto;
+        /* 頂部地圖區塊：左右並排 */
+        .頂部地圖區 {
             display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 30px;
+            grid-template-columns: 1fr 1fr; /* 左右各半 */
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto 30px auto;
         }
 
-        /* 地圖區域 */
-        .地圖區 {
+        .地圖容器 {
             background: #fff;
-            padding: 15px;
+            padding: 20px;
             border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             text-align: center;
-            position: sticky;
-            top: 20px;
-            height: fit-content;
+        }
+
+        .地圖標題 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: bold;
         }
 
         .地圖圖片 {
             width: 100%;
             height: auto;
-            border-radius: 15px;
+            border-radius: 10px;
             display: block;
         }
 
-        /* 景點清單區域 */
+        /* 下方導覽清單 */
+        .主容器 {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
         .導覽區 {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
         }
 
@@ -105,44 +103,33 @@
             opacity: 0.8;
         }
 
-        @media (max-width: 900px) {
-            .主容器 { grid-template-columns: 1fr; }
-            .地圖區 { position: relative; top: 0; }
+        @media (max-width: 800px) {
+            .頂部地圖區 { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>🗺️ 台灣觀光景點導覽 🗺️</h1>
-    <p>點擊景點名稱，直接開啟 Google 地圖導航</p>
-</header>
-
-<div class="主容器">
-    <div class="地圖區">
-    <div style="margin-bottom: 30px;">
-        <h3 style="color: #ff7e5f; margin-bottom: 10px;">📍 觀光景點分布</h3>
+<div class="頂部地圖區">
+    <div class="地圖容器">
+        <div class="地圖標題" style="color: #ff7e5f;">📍 觀光景點地圖</div>
         <img src="images/taiwan_map.png" alt="台灣觀光地圖" class="地圖圖片">
     </div>
-
-    <hr style="border: 0; border-top: 1px dashed #ffd3c9; margin: 20px 0;">
-
-    <div>
-        <h3 style="color: #d35400; margin-bottom: 10px;">🎁 在地名產圖鑑</h3>
+    <div class="地圖容器">
+        <div class="地圖標題" style="color: #d35400;">🎁 台灣名產地圖</div>
         <img src="images/taiwan_food.png" alt="台灣名產地圖" class="地圖圖片">
     </div>
-
-    <p style="margin-top:20px; color: #888; font-size: 0.9rem;">
-        💡 找到想去的地方，點右邊名稱即可！
-    </p>
 </div>
 
-    <div class="導覽區" id="listBody">
-        </div>
+<div class="主容器">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #d85a5a;">🗺️ 景點導覽清單</h2>
+        <p>點擊景點名稱即可開啟 Google 地圖導航</p>
+    </div>
+    <div class="導覽區" id="listBody"></div>
 </div>
 
 <script>
-    // 整合了景點與名產的完整資料
     const 觀光資料 = [
         { 縣市: "基隆市", 名產: "營養三明治、泡泡冰", 景點: [{ 名稱: "正濱漁港", 描述: "成排彩色房屋，獨特人文風貌" }] },
         { 縣市: "新北市", 名產: "三峽藍染、綠竹筍、鶯歌陶瓷", 景點: [
@@ -200,7 +187,6 @@
         const 卡片 = document.createElement('div');
         卡片.className = '縣市卡片';
         
-        // 組合內容，新增了名產資訊欄位
         let 內容HTML = `
             <div class="縣市名稱">${項目.縣市}</div>
             <div style="background: #fff5e6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem; color: #d35400; margin-bottom: 12px;">
@@ -209,6 +195,7 @@
         `;
         
         項目.景點.forEach(景點 => {
+            // 修正 Google 地圖連結
             const 地圖網址 = `https://www.google.com/maps/search/${encodeURIComponent(項目.縣市 + ' ' + 景點.名稱)}`;
             內容HTML += `
                 <a href="${地圖網址}" target="_blank" class="景點按鈕">
