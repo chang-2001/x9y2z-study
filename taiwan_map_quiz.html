@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快問快答！台灣名產大挑戰</title>
+    <style>
+        :root {
+            --primary: #ff4757;
+            --secondary: #2f3542;
+            --bg: #f1f2f6;
+            --success: #2ed573;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #game-container {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        /* 倒數圓圈動畫 */
+        .timer-svg {
+            width: 120px;
+            height: 120px;
+            transform: rotate(-90deg);
+        }
+
+        .timer-svg circle {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+        }
+
+        .timer-bg { stroke: #dfe4ea; }
+        .timer-bar {
+            stroke: var(--primary);
+            stroke-dasharray: 345; /* 2 * PI * 55 */
+            transition: stroke-dasharray 1s linear;
+        }
+
+        .timer-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .timer-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--secondary);
+        }
+
+        #question {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            color: var(--secondary);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 20px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            background: #ffa502;
+            color: white;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { transform: scale(1.05); background: #ff7b00; }
+        .btn:active { transform: scale(0.95); }
+
+        .hidden { display: none; }
+
+        #score-screen { font-size: 1.5rem; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="start-screen">
+        <h1>🏆 台灣名產快問快答</h1>
+        <p>每題只有 5 秒鐘，挑戰看看你能拿幾分！</p>
+        <button class="btn" onclick="startGame()" style="width: 200px; margin-top: 20px;">開始挑戰</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div class="timer-container">
+            <svg class="timer-svg">
+                <circle class="timer-bg" cx="60" cy="60" r="55"></circle>
+                <circle id="timer-bar" class="timer-bar" cx="60" cy="60" r="55"></circle>
+            </svg>
+            <div id="timer-text" class="timer-text">5</div>
+        </div>
+        <div id="question">載入中...</div>
+        <div class="options-grid" id="options">
+            </div>
+    </div>
+
+    <div id="score-screen" class="hidden">
+        <h2>挑戰結束！</h2>
+        <p id="final-score">得分：0</p>
+        <button class="btn" onclick="location.reload()">重新挑戰</button>
+    </div>
+</div>
+
+<script>
+    /* --- 題目區：請自行修改這裡的題目 --- */
+    const quizData = [
+        { q: "去「三義」要做什麼？", a: ["看木雕", "吃金牛角"], correct: 0 },
+        { q: "去「三峽」要做什麼？", a: ["看木雕", "吃金牛角"], correct: 1 },
+        { q: "去「三地門」要看什麼？", a: ["看皮雕", "看木雕"], correct: 0 },
+        { q: "「金門鋼刀」是用什麼做的？", a: ["廢棄砲彈", "原住民的刀"], correct: 0 },
+        { q: "「埔里」造紙有名是因為？", a: ["水質純淨", "樹很多"], correct: 0 },
+        { q: "「西螺」最有名的醬料是？", a: ["辣椒醬", "醬油"], correct: 1 },
+        { q: "「葡萄」產地在哪？", a: ["彰化", "台北"], correct: 0 },
+        { q: "去「林邊」可以買到什麼？", a: ["葡萄", "蓮霧"], correct: 1 },
+        { q: "去「台東」要買什麼？", a: ["金針花", "蓮霧"], correct: 0 },
+        { q: "「日月潭」在哪？", a: ["南投縣魚池鄉", "南投縣埔里鎮"], correct: 1 },
+        { q: "以下哪個地方不在南投？", a: ["日月潭", "翠峰湖"], correct: 1 },
+        { q: "以下哪個地方在宜蘭？", a: ["龜山島", "龜山"], correct: 0 },
+        { q: "以下哪個地方在澎湖？", a: ["雙心石滬", "藍眼淚"], correct: 0 },
+        { q: "「日月潭」的名產是？", a: ["茶葉", "蓮霧"], correct: 0 },
+        { q: "去「阿里山」要做什麼？", a: ["看日落", "看日出"], correct: 0 },
+        { q: "搭哪種特色交通工具去「阿里山」？", a: ["郵輪", "小火車"], correct: 1 },
+        { q: "臺南市「七股溼地」每年冬天會來的鳥是？", a: ["紅豆老鷹", "黑面琵鷺"], correct: 1 },
+        { q: "「七股溼地」在哪？", a: ["臺南", "南投"], correct: 0 },
+        { q: "以下哪個島在台東縣？", a: ["龜山島", "綠島"], correct: 1 },
+        { q: "「雙心石滬」的由來？", a: ["傳統捕魚陷阱", "為了觀光收入蓋的"], correct: 0 },
+        { q: "「八八坑道」生產什麼？", a: ["酒", "油"], correct: 0 },
+        { q: "「藍眼淚」要去哪裡看？", a: ["澎湖縣七美鎮", "連江縣（馬祖）南竿"], correct: 1 },
+        { q: "祈求考試順利要拜？", a: ["大甲媽祖", "文昌帝君"], correct: 1 },
+        { q: "「大甲媽祖」在哪？", a: ["彰化", "台中"], correct: 0 }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+    let timeLeft = 5;
+    let timer;
+    const dashMax = 345;
+
+    function startGame() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        if (currentIdx >= quizData.length) return endGame();
+
+        const data = quizData[currentIdx];
+        document.getElementById('question').innerText = data.q;
+        
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = '';
+        data.a.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = opt;
+            btn.onclick = () => handleAnswer(i);
+            optionsDiv.appendChild(btn);
+        });
+
+        startTimer();
+    }
+
+    function startTimer() {
+        timeLeft = 5;
+        updateTimerUI();
+        clearInterval(timer);
+        timer = setInterval(() => {
+            timeLeft--;
+            updateTimerUI();
+            if (timeLeft <= 0) {
+                handleAnswer(-1); // 超時視同答錯
+            }
+        }, 1000);
+    }
+
+    function updateTimerUI() {
+        document.getElementById('timer-text').innerText = timeLeft;
+        const offset = (dashMax * timeLeft) / 5;
+        document.getElementById('timer-bar').style.strokeDasharray = `${offset} ${dashMax}`;
+    }
+
+    function handleAnswer(choice) {
+        clearInterval(timer);
+        if (choice === quizData[currentIdx].correct) {
+            score += 20;
+            // 這裡可以加個答對音效或動畫
+        }
+        
+        currentIdx++;
+        if (currentIdx < quizData.length) {
+            showQuestion();
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        const scoreScreen = document.getElementById('score-screen');
+        scoreScreen.classList.remove('hidden');
+        document.getElementById('final-score').innerText = `得分：${score}`;
+    }
+</script>
+
+</body>
+</html>
