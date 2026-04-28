@@ -34,7 +34,8 @@
             width: 90%;
             max-width: 600px;
             max-height: 90vh;
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
 
         /* 倒數圓圈動畫 */
@@ -53,7 +54,7 @@
         .timer-bg { stroke: #dfe4ea; }
         .timer-bar {
             stroke: var(--primary);
-            stroke-dasharray: 345; /* 2 * PI * 55 */
+            stroke-dasharray: 345;
             transition: stroke-dasharray 1s linear;
         }
 
@@ -103,9 +104,8 @@
 
         .hidden { display: none; }
 
-        /* 錯題複習區樣式 */
         #review-box {
-            max-height: 350px;
+            flex-grow: 1;
             overflow-y: auto;
             background: #fff5f5;
             border-radius: 15px;
@@ -118,25 +118,16 @@
             display: flex;
             gap: 15px;
             justify-content: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
-        .home-link {
-            text-decoration: none;
-            flex: 1;
-        }
-
-        .btn-home {
-            background: var(--home-btn);
-            width: 100%;
-        }
-
-        .btn-home:hover {
-            background: var(--secondary);
-        }
+        .home-link { text-decoration: none; flex: 1; }
+        .btn-home { background: var(--home-btn); width: 100%; }
+        .btn-home:hover { background: var(--secondary); }
 
         @media (max-width: 500px) {
             .options-grid { grid-template-columns: 1fr; }
+            #question { font-size: 1.4rem; }
         }
     </style>
 </head>
@@ -144,8 +135,8 @@
 
 <div id="game-container">
     <div id="start-screen">
-        <h1>🏆 台灣名產快問快答</h1>
-        <p>每題只有 5 秒鐘，看誰才是台灣知識王！</p>
+        <h1 style="color: var(--primary)">🏆 台灣名產快問快答</h1>
+        <p>每題只有 5 秒鐘，挑戰成為台灣知識王！</p>
         <button class="btn" onclick="startGame()" style="width: 200px; margin-top: 20px;">開始挑戰</button>
     </div>
 
@@ -162,15 +153,14 @@
     </div>
 
     <div id="score-screen" class="hidden">
-        <h2>挑戰結束！</h2>
-        <p id="final-score" style="font-size: 2.5rem; font-weight: bold; color: #ff4757;"></p>
+        <h2 style="margin-top:0;">挑戰結束！</h2>
+        <p id="final-score" style="font-size: 2.5rem; font-weight: bold; color: #ff4757; margin:10px 0;"></p>
         
-        <div id="review-box">
-            </div>
+        <div id="review-box"></div>
 
         <div class="btn-container">
             <button class="btn" onclick="location.reload()" style="flex:1;">🔄 重新挑戰</button>
-            <a href="taiwan_travel.html" class="home-link">
+            <a href="index.html" class="home-link">
                 <button class="btn btn-home">🏠 回到首頁</button>
             </a>
         </div>
@@ -178,7 +168,44 @@
 </div>
 
 <script>
-/* --- 題目資料區 (已校對) --- */
+/* --- 音效引擎 (Web Audio API) --- */
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+
+function initAudio() {
+    if (!audioCtx) audioCtx = new AudioContext();
+}
+
+function playSound(type) {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+
+    if (type === 'correct') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1); // E5
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    } else {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220.00, now); // A3
+        osc.frequency.exponentialRampToValueAtTime(146.83, now + 0.2); // D3
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+    }
+}
+
+/* --- 人類出的專業題庫 --- */
 const quizData = [
     { q: "去「三義」要做什麼？", a: ["看木雕", "吃金牛角"], correct: 0 },
     { q: "去「三峽」要做什麼？", a: ["看木雕", "吃金牛角"], correct: 1 },
@@ -214,6 +241,7 @@ let wrongList = [];
 const dashMax = 345;
 
 function startGame() {
+    initAudio();
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.remove('hidden');
     showQuestion();
@@ -221,10 +249,8 @@ function startGame() {
 
 function showQuestion() {
     if (currentIdx >= quizData.length) return endGame();
-
     const data = quizData[currentIdx];
     document.getElementById('question').innerText = data.q;
-    
     const optionsDiv = document.getElementById('options');
     optionsDiv.innerHTML = '';
     data.a.forEach((opt, i) => {
@@ -234,7 +260,6 @@ function showQuestion() {
         btn.onclick = () => handleAnswer(i);
         optionsDiv.appendChild(btn);
     });
-
     startTimer();
 }
 
@@ -245,9 +270,7 @@ function startTimer() {
     timer = setInterval(() => {
         timeLeft--;
         updateTimerUI();
-        if (timeLeft <= 0) {
-            handleAnswer(-1); // 超時
-        }
+        if (timeLeft <= 0) handleAnswer(-1);
     }, 1000);
 }
 
@@ -260,23 +283,18 @@ function updateTimerUI() {
 function handleAnswer(choice) {
     clearInterval(timer);
     const data = quizData[currentIdx];
-    
     if (choice === data.correct) {
-        score += 5; 
+        score += 4; // 調整為25題制或自行設定每題分數
+        playSound('correct');
         flashEffect('green');
     } else {
         const reason = choice === -1 ? "時間到！" : `你選了：${data.a[choice]}`;
-        wrongList.push({
-            q: data.q,
-            correct: data.a[data.correct],
-            wrong: reason
-        });
+        wrongList.push({ q: data.q, correct: data.a[data.correct], wrong: reason });
+        playSound('wrong');
         flashEffect('red');
     }
-    
     currentIdx++;
-    // 短暫延遲讓視覺回饋清楚
-    setTimeout(showQuestion, 300); 
+    setTimeout(showQuestion, 400); 
 }
 
 function flashEffect(color) {
@@ -292,11 +310,11 @@ function endGame() {
 
     const reviewDiv = document.getElementById('review-box');
     if (wrongList.length > 0) {
-        let html = '<h3 style="color: #d35400;">🔍 錯題紅修單：</h3><div style="text-align:left;">';
+        let html = '<h3 style="color: #d35400; margin-top:0;">🔍 錯題紅修單：</h3><div style="text-align:left;">';
         wrongList.forEach(item => {
-            html += `<div style="margin-bottom:15px; border-bottom: 1px dashed #ccc; padding-bottom:10px;">
-                <div style="font-weight:bold;">${item.q}</div>
-                <div style="color:#2ed573;">✅ 正確答案：${item.correct}</div>
+            html += `<div style="margin-bottom:12px; border-bottom: 1px dashed #ccc; padding-bottom:8px;">
+                <div style="font-weight:bold; font-size:0.95rem;">${item.q}</div>
+                <div style="color:#27ae60; font-size:0.9rem;">✅ 正確答案：${item.correct}</div>
                 <div style="color:#777; font-size:0.8rem;">(${item.wrong})</div>
             </div>`;
         });
@@ -307,6 +325,5 @@ function endGame() {
     }
 }
 </script>
-
 </body>
 </html>
