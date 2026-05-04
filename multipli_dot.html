@@ -2,184 +2,583 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>小數乘法：從整數到定位</title>
+    <title>小數點乘法降維教學引擎</title>
     <style>
-        :root { --active: #e74c3c; --carry: #27ae60; --hint: #0984e3; --gray: #ccc; }
-        body { font-family: 'Consolas', '微軟正黑體', monospace; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        body {
+            font-family: '微軟正黑體', sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+            width: 850px;
+        }
+        input {
+            font-size: 24px;
+            width: 150px;
+            text-align: center;
+            margin: 0 10px;
+            padding: 5px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            font-size: 20px;
+            padding: 8px 20px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 20px;
+        }
+        button:hover { background-color: #34495e; }
         
-        .control-area { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input { font-size: 18px; width: 100px; text-align: center; padding: 5px; margin: 0 10px; border: 2px solid #ddd; border-radius: 5px; }
+        #slides-container {
+            width: 850px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-        .paper { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); width: 850px; }
-        h3 { color: #7f8c8d; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        /* 投影片基礎樣式 */
+        .slide {
+            display: flex;
+            background: white;
+            border: 4px solid #000; 
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* 特殊步驟(Phase 1, Phase 4)使用單欄垂直佈局 */
+        .special-slide {
+            flex-direction: column;
+            justify-content: center;
+            font-size: 24px;
+            line-height: 1.8;
+        }
+        .special-slide .title {
+            background-color: #f39c12;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 8px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .comic-box {
+            background: #fff3e0;
+            border: 2px dashed #e67e22;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .highlight-zero { color: #2980b9; font-weight: bold; }
+        .highlight-dot { color: #e74c3c; font-weight: bold; }
+        .highlight-core { color: #27ae60; font-weight: bold; font-size: 30px;}
 
-        /* 上層：整數直式區 (沿用你的引擎樣式) */
-        .math-board { font-size: 45px; text-align: right; letter-spacing: 12px; line-height: 1.1; position: relative; margin-bottom: 40px; }
-        .carry-row { height: 40px; font-size: 24px; color: var(--carry); letter-spacing: 28px; font-weight: bold; min-height: 40px; }
-        .line { border-bottom: 3px solid #333; margin: 8px 0; letter-spacing: 0; }
-        .operator { position: absolute; left: -45px; top: 85px; }
+        /* 直式引擎樣式 */
+        .math-area {
+            flex: 0 0 350px;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px dashed #bdc3c7;
+            padding-right: 30px;
+        }
+        .text-area {
+            flex: 1;
+            padding-left: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.6;
+        }
+        .step-badge {
+            align-self: flex-start;
+            background-color: #333;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .math-row {
+            display: flex;
+            justify-content: flex-end;
+            height: 45px;
+            align-items: center;
+            font-size: 40px;
+            font-family: 'Consolas', monospace;
+        }
+        .top-grid-row { height: 35px; font-size: 24px; color: #555; }
+        .top-grid-row .math-cell { opacity: 0.8; }
+        .add-carry-row { height: 25px; font-size: 20px; color: #e74c3c; }
+        .math-cell {
+            width: 40px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+        }
+        .line { border-bottom: 4px solid #000; margin: 10px 0; width: 100%; }
+        .hl-bg { background-color: #ecf0f1; border-radius: 8px; }
 
-        /* 下層：小數定位區 */
-        .decimal-area { font-size: 40px; font-weight: bold; border-top: 4px dashed #eee; padding-top: 30px; position: relative; }
-        .logic-text { font-size: 24px; color: var(--carry); margin-bottom: 20px; }
-        .result-container { display: flex; align-items: center; justify-content: flex-end; height: 60px; padding-right: 20px; }
-        .arrow-line { height: 40px; color: var(--hint); font-size: 35px; text-align: right; letter-spacing: 5px; padding-right: 25px; min-height: 40px; }
-        .cursor-v { border-left: 4px solid #333; height: 50px; margin-left: 5px; }
-        .red-dot { color: var(--active); font-weight: bold; }
-
-        /* 通用 */
-        .active { color: var(--active) !important; font-weight: bold; }
-        .carry { color: var(--carry) !important; font-weight: bold; }
-        .placeholder { color: var(--gray); }
-        #msg-box { margin-top: 20px; background: #2c3e50; color: white; padding: 15px; border-radius: 8px; width: 820px; text-align: center; font-size: 22px; }
+        /* 第 4 步專屬：跳位精準對齊樣式 */
+        .jump-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Consolas', monospace;
+            font-size: 45px;
+            margin: 20px 0;
+            background: #ecf0f1;
+            padding: 30px 40px;
+            border-radius: 10px;
+        }
+        .jump-row {
+            display: flex;
+            position: relative; /* 供跳位文字絕對定位使用 */
+        }
+        .jump-char {
+            width: 35px;
+            text-align: center;
+            display: inline-block;
+        }
+        .jump-label {
+            font-family: '微軟正黑體', sans-serif;
+            font-size: 24px;
+            color: #e74c3c;
+            margin-left: 15px;
+            white-space: nowrap;
+            position: absolute;
+            left: 100%; /* 強制置於字元列的正右方 */
+            top: 50%;
+            transform: translateY(-50%);
+        }
     </style>
 </head>
 <body>
 
-<div class="control-area">
-    數字 A：<input type="text" id="numA" value="1.25"> × 
-    數字 B：<input type="text" id="numB" value="4">
-    <button onclick="mainExecutor.run()" style="padding: 10px 25px; cursor:pointer; background: #2c3e50; color: white; border:none; border-radius: 5px;">開始完整演示</button>
-</div>
-
-<div class="paper">
-    <div id="section-upper">
-        <h3>1. 整數直式演示</h3>
-        <div class="math-board">
-            <div class="carry-row" id="carries"></div>
-            <div id="rowA"></div>
-            <div id="rowB" style="position:relative"><span class="operator">×</span></div>
-            <div class="line"></div>
-            <div id="layers"></div>
-            <div id="final-line" style="display:none" class="line"></div>
-            <div id="rowTotal"></div>
+    <div class="header">
+        <h2>爸爸的數字降維心法！小數乘法</h2>
+        <div>
+            <input type="text" id="numA" value="0.168" placeholder="數字A">
+            ×
+            <input type="text" id="numB" value="2500" placeholder="數字B">
+            <button onclick="executeAll()">產生教學步驟</button>
         </div>
+        <p style="color: #7f8c8d; font-size: 14px; margin-top: 10px;">特色：1.剝除0與小數點 2.核心大的在上方 3.直式堆疊 4.停車場還原精準跳位</p>
     </div>
 
-    <div id="section-lower" class="decimal-area" style="display:none">
-        <h3>2. 小數點定位演示</h3>
-        <div id="decimal-formula" class="logic-text"></div>
-        <div class="result-container" id="logic-res-row">
-            <div id="copy-total"></div><span id="v-line" class="cursor-v"></span>
-        </div>
-        <div id="arrow-row" class="arrow-line"></div>
-        <div id="final-decimal-row" style="text-align:right; padding-right:25px; font-size:50px;"></div>
-    </div>
-</div>
-
-<div id="msg-box">請輸入含小數的數字並點擊演示</div>
+    <div id="slides-container"></div>
 
 <script>
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-const say = async (txt) => { document.getElementById('msg-box').innerHTML = txt; };
+    const colors = ['#e74c3c', '#2980b9', '#27ae60', '#8e44ad', '#d35400', '#16a085', '#c0392b', '#0984e3'];
+    let colorIdx = 0;
+    const getColor = () => colors[(colorIdx++) % colors.length];
 
-const mainExecutor = {
-    async run() {
-        const rawA = document.getElementById('numA').value;
-        const rawB = document.getElementById('numB').value;
-        const dpA = (rawA.split('.')[1] || '').length;
-        const dpB = (rawB.split('.')[1] || '').length;
-        const totalDP = dpA + dpB;
-
-        const intA = rawA.replace('.', '').split('');
-        const intB = rawB.replace('.', '').split('');
-
-        // --- 重置界面 ---
-        document.getElementById('section-lower').style.display = 'none';
-        document.getElementById('final-line').style.display = 'none';
-        document.getElementById('layers').innerHTML = '';
-        document.getElementById('rowTotal').innerText = '';
-        document.getElementById('arrow-row').innerText = '';
-        document.getElementById('final-decimal-row').innerText = '';
-
-        // --- 1. 整數直式引擎啟動 ---
-        await say("首先無視小數點，當作整數進行運算...");
-        document.getElementById('rowA').innerHTML = intA.map((d, i) => `<span id="a_${i}">${d}</span>`).join('');
-        document.getElementById('rowB').innerHTML = `<span class="operator">×</span>` + intB.map((d, i) => `<span id="b_${i}">${d}</span>`).join('');
-        document.getElementById('carries').innerHTML = new Array(intA.length + 1).fill('').map((_, i) => `<span id="c_${i}"></span>`).join('');
-
-        const results = [];
-        for (let j = intB.length - 1; j >= 0; j--) {
-            const layerEl = document.createElement('div');
-            document.getElementById('layers').appendChild(layerEl);
-            let layerDigits = new Array(intB.length - 1 - j).fill('<span class="placeholder">0</span>');
-            let currentCarry = 0;
-
-            for (let i = intA.length - 1; i >= 0; i--) {
-                this.clearStyles();
-                if (document.getElementById(`c_${i+1}`)) document.getElementById(`c_${i+1}`).innerText = '';
-                document.getElementById(`a_${i}`).className = 'active';
-                document.getElementById(`b_${j}`).className = 'active';
-                
-                const prod = parseInt(intA[i]) * parseInt(intB[j]);
-                await say(`${intA[i]} × ${intB[j]} = ${prod}`);
-                await sleep(500);
-
-                const sum = prod + currentCarry;
-                if (currentCarry > 0) {
-                    document.getElementById(`c_${i}`).innerText = currentCarry;
-                    document.getElementById(`c_${i}`).className = 'carry';
-                    await say(`${prod} + 進位 ${currentCarry} = ${sum}`);
-                    await sleep(500);
-                }
-                
-                currentCarry = Math.floor(sum / 10);
-                layerDigits.unshift(`<span>${sum % 10}</span>`);
-                layerEl.innerHTML = layerDigits.join('');
-                await sleep(500);
-            }
-            if (currentCarry > 0) {
-                layerDigits.unshift(`<span>${currentCarry}</span>`);
-                layerEl.innerHTML = layerDigits.join('');
-                await sleep(500);
-            }
-            results.push(parseInt(intA.join('')) * parseInt(intB[j]) * Math.pow(10, intB.length - 1 - j));
-        }
-
-        this.clearStyles();
-        document.getElementById('final-line').style.display = 'block';
-        const finalInt = results.reduce((p, c) => p + c, 0);
-        document.getElementById('rowTotal').innerText = finalInt;
-        await say(`整數運算完成，結果為 ${finalInt}`);
-        await sleep(1500);
-
-        // --- 2. 小數點定位演示 ---
-        document.getElementById('section-lower').style.display = 'block';
-        await say("現在進行小數點定位演示...");
-        
-        document.getElementById('decimal-formula').innerHTML = `${rawA} × ${rawB}<br>${dpA} + ${dpB} = <span class='active'>${totalDP}</span> 位小數`;
-        await sleep(1500);
-
-        const copyTotalEl = document.getElementById('copy-total');
-        copyTotalEl.innerText = finalInt;
-        await say("複製整數結果，並在最右邊畫一條線");
-        await sleep(1000);
-
-        const arrowRow = document.getElementById('arrow-row');
-        await say(`由右往左數 <span class='active'>${totalDP}</span> 位...`);
-        
-        let arrows = "";
-        for(let k=0; k < totalDP; k++) {
-            await sleep(400); // 0.4秒增加一個箭頭
-            arrows = "←" + arrows;
-            arrowRow.innerHTML = arrows;
-        }
-        await sleep(800);
-
-        // 最後著陸點：計算小數點位置並顯示
-        const finalStr = (finalInt / Math.pow(10, totalDP)).toFixed(totalDP);
-        const parts = finalStr.split('.');
-        const resultHTML = `${parts[0]}<span class="red-dot">.</span>${parts[1]}`;
-        
-        document.getElementById('final-decimal-row').innerHTML = resultHTML;
-        await say(`在對應位置點下<span class='active'>紅點</span>，計算完成！`);
-    },
-
-    clearStyles() {
-        document.querySelectorAll('span').forEach(s => s.classList.remove('active', 'carry'));
+    function parseNumber(str) {
+        let dp = str.includes('.') ? str.split('.')[1].length : 0;
+        let noDot = str.replace('.', '');
+        let noLeading = noDot.replace(/^0+/, '');
+        if (noLeading === '') noLeading = '0'; 
+        let trailingMatch = noLeading.match(/0+$/);
+        let zeros = trailingMatch && noLeading !== '0' ? trailingMatch[0].length : 0;
+        let core = noLeading !== '0' ? noLeading.substring(0, noLeading.length - zeros) : '0';
+        return { dp, zeros, core };
     }
-};
-</script>
 
+    function executeAll() {
+        const rawA = document.getElementById('numA').value.trim();
+        const rawB = document.getElementById('numB').value.trim();
+        if (!rawA || !rawB) { alert("請輸入數字！"); return; }
+
+        const container = document.getElementById('slides-container');
+        container.innerHTML = ''; 
+        
+        let pA = parseNumber(rawA);
+        let pB = parseNumber(rawB);
+
+        let totalDP = pA.dp + pB.dp;
+        let totalZeros = pA.zeros + pB.zeros;
+
+        let coreA = pA.core;
+        let coreB = pB.core;
+
+        let topCore = parseInt(coreA) >= parseInt(coreB) ? coreA : coreB;
+        let bottomCore = parseInt(coreA) >= parseInt(coreB) ? coreB : coreA;
+
+        if(topCore === '0') {
+            container.innerHTML = `<div class="slide special-slide"><h3>答案是 0！</h3></div>`;
+            return;
+        }
+
+        // ==========================================
+        // Phase 1: 降維打擊
+        // ==========================================
+        const phase1 = document.createElement('div');
+        phase1.className = 'slide special-slide';
+        phase1.innerHTML = `
+            <div><span class="title">第1步：0跟小數點都去旁邊休息</span></div>
+            <div style="font-size: 32px; text-align: center; margin-bottom: 10px;">
+                ${rawA} × ${rawB}
+            </div>
+            <div style="display:flex; gap: 20px; justify-content: center;">
+                <div class="comic-box">
+                    <strong>數字 A：${rawA}</strong><br>
+                    小數點休息：<span class="highlight-dot">${pA.dp} 位</span><br>
+                    去停車場的 0：<span class="highlight-zero">${pA.zeros} 個</span><br>
+                    核心數字：<span class="highlight-core">${pA.core}</span>
+                </div>
+                <div class="comic-box">
+                    <strong>數字 B：${rawB}</strong><br>
+                    小數點休息：<span class="highlight-dot">${pB.dp} 位</span><br>
+                    去停車場的 0：<span class="highlight-zero">${pB.zeros} 個</span><br>
+                    核心數字：<span class="highlight-core">${pB.core}</span>
+                </div>
+            </div>
+            <div class="comic-box" style="text-align:center; font-size: 26px;">
+                總計：室外休息 <span class="highlight-dot">${totalDP} 位小數</span>，
+                停車場有 <span class="highlight-zero">${totalZeros} 個 0</span>。
+            </div>
+        `;
+        container.appendChild(phase1);
+
+        // ==========================================
+        // Phase 2: 核心對位
+        // ==========================================
+        const phase2 = document.createElement('div');
+        phase2.className = 'slide special-slide';
+        phase2.innerHTML = `
+            <div><span class="title">第2步：核心對位運算</span></div>
+            <div style="text-align: center;">
+                <img src="https://api.iconify.design/twemoji:thinking-face.svg" width="50" style="vertical-align: middle;">
+                大的在上面，小的在下面，只要搞 ${bottomCore.length} 次！<br>
+                <span class="highlight-core" style="font-size: 45px; letter-spacing: 5px;">${topCore} × ${bottomCore}</span>
+            </div>
+        `;
+        container.appendChild(phase2);
+
+        // ==========================================
+        // Phase 3: 直式乘法引擎
+        // ==========================================
+        let coreResultStr = generateCoreMultiplication(topCore, bottomCore, container);
+
+        // ==========================================
+        // Phase 4: 還原0 -> 還原小數點 (已優化對齊)
+        // ==========================================
+        let zerosStr = '0'.repeat(totalZeros);
+        let rawWithZeros = coreResultStr + zerosStr; // 420000
+        
+        // 為了確保跳位動畫能有足夠的位數可跳，計算 Padding
+        let padded = rawWithZeros;
+        if (padded.length <= totalDP) {
+            padded = padded.padStart(totalDP + 1, '0');
+        }
+        
+        // --- 產生精準對齊的 第一列 (數字列) ---
+        let digitsHtml = padded.split('').map(d => `<span class="jump-char">${d}</span>`).join('');
+        
+        // --- 產生精準對齊的 第二列 (箭頭列與文字) ---
+        let arrowsHtml = '';
+        if (totalDP > 0) {
+            let arrowsArr = [];
+            for (let i = 0; i < padded.length; i++) {
+                if (i >= padded.length - totalDP) {
+                    arrowsArr.push('←');
+                } else {
+                    arrowsArr.push('&nbsp;'); // 用空白字元維持網格
+                }
+            }
+            let arrowsSpans = arrowsArr.map(a => `<span class="jump-char" style="color: #e74c3c;">${a}</span>`).join('');
+            // 文字說明強制對齊在右側
+            arrowsHtml = `${arrowsSpans}<div class="jump-label">(跳 ${totalDP} 位)</div>`;
+        } else {
+            arrowsHtml = `<div class="jump-label" style="position:static; margin-left:0; transform:none;">沒有小數點，不須跳位</div>`;
+        }
+
+        // --- 產生 第三列 (著陸結果) ---
+        let dotIndex = padded.length - totalDP;
+        let jumpHTML = padded.substring(0, dotIndex) + '<span style="color:red; font-weight:bold; margin:0 5px;">.</span>' + padded.substring(dotIndex);
+        
+        // --- 最終化簡答案 ---
+        let clean = padded.substring(0, dotIndex) + '.' + padded.substring(dotIndex);
+        if(totalDP === 0) clean = rawWithZeros;
+        let finalClean = parseFloat(clean).toString();
+
+        const phase4 = document.createElement('div');
+        phase4.className = 'slide special-slide';
+        phase4.innerHTML = `
+            <div><span class="title" style="background-color: #27ae60;">第4步：還原 0 ➔ 還原小數點！</span></div>
+            <div style="padding-left: 20px;">
+                <p>1. 核心乘法的答案是：<strong>${coreResultStr}</strong></p>
+                <p>2. 把停車場的 <strong>${totalZeros} 個 0</strong> 加回來：<br>
+                   ${coreResultStr} ➔ ${coreResultStr}<span class="highlight-zero">${zerosStr}</span>
+                </p>
+                <p>3. 小數點從室外回來，由右至左跳 <strong>${totalDP} 位</strong>：</p>
+                
+                <div class="jump-container">
+                    <div class="jump-row">${digitsHtml}</div>
+                    <div class="jump-row" style="margin: 10px 0;">${arrowsHtml}</div>
+                    <div style="margin-top: 15px; display:flex; align-items:center; justify-content:center;">
+                        <span style="font-family:'微軟正黑體'; font-weight:bold; margin-right: 15px;">➔</span> 
+                        <span>${totalDP > 0 ? jumpHTML : rawWithZeros}</span>
+                    </div>
+                </div>
+
+                <div style="text-align: center; font-size: 35px; margin-top: 30px;">
+                    大功告成！最終答案：<span style="border-bottom: 4px solid #e74c3c; color:#c0392b; font-weight:bold;">${finalClean}</span>
+                </div>
+            </div>
+        `;
+        container.appendChild(phase4);
+    }
+
+    // ---------------------------------------------------------
+    // 以下為直式堆疊引擎邏輯 (原封不動)
+    // ---------------------------------------------------------
+    function placeInTopGrid(col, strVal, grid) {
+        let len = strVal.length;
+        let r = 0;
+        while (true) {
+            if (!grid[r]) grid[r] = [];
+            let free = true;
+            for (let k = 0; k < len; k++) {
+                if (grid[r][col + k] !== undefined) { free = false; break; }
+            }
+            if (free) {
+                for (let k = 0; k < len; k++) grid[r][col + len - 1 - k] = strVal[k];
+                return r;
+            }
+            r++;
+        }
+    }
+
+    function sumTopGridColumn(col, grid) {
+        let sum = 0;
+        for (let r = 0; r < grid.length; r++) {
+            if (grid[r] && grid[r][col] !== undefined) sum += parseInt(grid[r][col]);
+        }
+        return sum;
+    }
+
+    function generateCoreMultiplication(strA, strB, container) {
+        let slidesData = [];
+        let layers = [];
+        let stepNum = 1;
+        colorIdx = 0;
+
+        const addSlide = (hl_A, hl_B, hl_layer_cell, topGrid, hl_top_cells, msg, color, showFinal, sumArr, addCarries = []) => {
+            slidesData.push({
+                step: stepNum++, A: strA, B: strB, 
+                topGrid: topGrid.map(row => [...row]), 
+                hl_A, hl_B, layers: layers.map(l => [...l]),
+                hl_layer_cell, hl_top_cells, msg, color, showFinal, sumArr, addCarries
+            });
+        }
+
+        for (let j = strB.length - 1; j >= 0; j--) {
+            let layerIdx = strB.length - 1 - j;
+            let currentLayer = [];
+            for(let k = 0; k < layerIdx; k++) currentLayer[k] = '0';
+            layers.push(currentLayer);
+            let topGrid = [];
+
+            for (let i = strA.length - 1; i >= 0; i--) {
+                let i_rev = strA.length - 1 - i;
+                let col = i_rev + layerIdx;
+                let color = getColor();
+                let a_val = parseInt(strA[i]);
+                let b_val = parseInt(strB[j]);
+                let prod = a_val * b_val;
+                let msg = `【第3步：直式乘法】<br>${a_val} × ${b_val} = ${prod}`;
+                let hl_top_cells = [];
+
+                let hasCarry = false;
+                for (let r = 0; r < topGrid.length; r++) {
+                    if (topGrid[r] && topGrid[r][col] !== undefined) { hasCarry = true; break; }
+                }
+
+                if (i === strA.length - 1 || !hasCarry) {
+                    let digit = prod % 10;
+                    let carry = Math.floor(prod / 10);
+                    currentLayer[col] = digit.toString();
+                    msg += `<br>寫下 ${digit}。`;
+                    if (carry > 0) {
+                        let r = placeInTopGrid(col + 1, carry.toString(), topGrid);
+                        msg += `<br>進位 ${carry} 寫在上面。`;
+                        hl_top_cells.push({r, c: col + 1});
+                    }
+                } else {
+                    let prodStr = prod.toString();
+                    let r = placeInTopGrid(col, prodStr, topGrid);
+                    msg += `<br>將乘積 ${prod} 完整疊寫在上面。`;
+                    for(let k=0; k<prodStr.length; k++) hl_top_cells.push({r, c: col + prodStr.length - 1 - k});
+
+                    let colSum = sumTopGridColumn(col, topGrid);
+                    let sumTerms = [];
+                    for (let tr = topGrid.length - 1; tr >= 0; tr--) {
+                        if (topGrid[tr] && topGrid[tr][col] !== undefined) sumTerms.push(topGrid[tr][col]);
+                    }
+                    if (sumTerms.length > 1) msg += `<br>垂直相加：${sumTerms.join(' + ')} = ${colSum}。`;
+
+                    let digit = colSum % 10;
+                    let carry = Math.floor(colSum / 10);
+                    currentLayer[col] = digit.toString();
+                    msg += `<br>寫下 ${digit}。`;
+
+                    if (carry > 0) {
+                        let rc = placeInTopGrid(col + 1, carry.toString(), topGrid);
+                        msg += `<br>進位 ${carry} 寫在下一個上面。`;
+                        hl_top_cells.push({r: rc, c: col + 1});
+                    }
+                }
+                addSlide(i_rev, layerIdx, { layer: layerIdx, col: col }, topGrid, hl_top_cells, msg, color, false);
+            }
+
+            let maxCol = strA.length + layerIdx;
+            let finalColSum = sumTopGridColumn(maxCol, topGrid);
+            if (finalColSum > 0) {
+                currentLayer[maxCol] = finalColSum.toString();
+                addSlide(null, layerIdx, { layer: layerIdx, col: maxCol }, topGrid, [], `最左列相加為 ${finalColSum}，<br>沒有下個數字了，直接放下來。`, getColor(), false);
+            }
+
+            if (j > 0) {
+                addSlide(null, null, null, [], [], `上面用橡皮擦清空，<br>準備下一個位數相乘。`, '#7f8c8d', false);
+            }
+        }
+
+        let finalSumStr = (parseInt(strA) * parseInt(strB)).toString();
+        
+        if (strB.length > 1) {
+            let additionCarries = [];
+            let maxLen = layers.reduce((max, l) => Math.max(max, l.length), 0);
+            let currentAddCarry = 0;
+            let sumArr = [];
+            
+            for (let c = 0; c < maxLen || currentAddCarry > 0; c++) {
+                let colSum = currentAddCarry;
+                for (let l = 0; l < layers.length; l++) {
+                    if (layers[l][c]) colSum += parseInt(layers[l][c]);
+                }
+                sumArr[c] = (colSum % 10).toString();
+                currentAddCarry = Math.floor(colSum / 10);
+                if (currentAddCarry > 0) additionCarries[c + 1] = currentAddCarry.toString();
+            }
+            addSlide(null, null, null, [], [], `乘法結束，開始加總！<br>遇到進位寫在直線跟第一層之間。<br>核心答案是 ${finalSumStr}。`, '#2c3e50', true, sumArr, additionCarries);
+        }
+
+        slidesData.forEach(data => container.appendChild(createSlideDOM(data)));
+        return finalSumStr;
+    }
+
+    function createRow(arr, hl_col, color, isCarry = false, extraClass = '') {
+        let rowDiv = document.createElement('div');
+        rowDiv.className = isCarry ? `math-row ${extraClass}` : `math-row ${extraClass}`;
+        for (let c = 7; c >= 0; c--) {
+            let cell = document.createElement('div');
+            cell.className = 'math-cell';
+            if (arr && arr[c] !== undefined) {
+                cell.innerText = arr[c];
+                if (c === hl_col) {
+                    cell.style.color = color;
+                    cell.style.fontWeight = 'bold';
+                    if (!isCarry) { cell.classList.add('hl-bg'); } 
+                    else { cell.style.opacity = '1'; }
+                }
+            }
+            rowDiv.appendChild(cell);
+        }
+        return rowDiv;
+    }
+
+    function createSlideDOM(data) {
+        const slide = document.createElement('div');
+        slide.className = 'slide';
+
+        const mathArea = document.createElement('div');
+        mathArea.className = 'math-area';
+
+        if (data.topGrid && data.topGrid.length > 0) {
+            for (let r = data.topGrid.length - 1; r >= 0; r--) {
+                let rowData = data.topGrid[r];
+                if (rowData) {
+                    let rowDiv = createRow(rowData, -1, data.color, true, 'top-grid-row');
+                    if (data.hl_top_cells) {
+                        data.hl_top_cells.forEach(cell => {
+                            if (cell.r === r) {
+                                let cellDiv = rowDiv.children[7 - cell.c];
+                                if (cellDiv) {
+                                    cellDiv.style.color = data.color;
+                                    cellDiv.style.fontWeight = 'bold';
+                                    cellDiv.style.opacity = '1';
+                                }
+                            }
+                        });
+                    }
+                    mathArea.appendChild(rowDiv);
+                }
+            }
+        }
+
+        let arrA = []; for(let k=0; k<data.A.length; k++) arrA[k] = data.A[data.A.length - 1 - k];
+        mathArea.appendChild(createRow(arrA, data.hl_A, data.color));
+
+        let arrB = []; for(let k=0; k<data.B.length; k++) arrB[k] = data.B[data.B.length - 1 - k];
+        arrB[Math.max(data.A.length, data.B.length)] = '×';
+        mathArea.appendChild(createRow(arrB, data.hl_B, data.color));
+
+        const line1 = document.createElement('div');
+        line1.className = 'line';
+        mathArea.appendChild(line1);
+
+        if (data.showFinal && data.addCarries && data.addCarries.length > 0) {
+            mathArea.appendChild(createRow(data.addCarries, null, '#e74c3c', true, 'add-carry-row'));
+        }
+
+        data.layers.forEach((layer, layerIdx) => {
+            let hl_col = (data.hl_layer_cell && data.hl_layer_cell.layer === layerIdx) ? data.hl_layer_cell.col : -1;
+            mathArea.appendChild(createRow(layer, hl_col, data.color));
+        });
+
+        if (data.showFinal && data.sumArr) {
+            const line2 = document.createElement('div');
+            line2.className = 'line';
+            mathArea.appendChild(line2);
+            mathArea.appendChild(createRow(data.sumArr, null, '#000'));
+        }
+
+        const textArea = document.createElement('div');
+        textArea.className = 'text-area';
+        textArea.style.color = data.color;
+        
+        const badge = document.createElement('div');
+        badge.className = 'step-badge';
+        badge.innerText = 'Step ' + data.step;
+        
+        const msgDiv = document.createElement('div');
+        msgDiv.innerHTML = data.msg;
+
+        textArea.appendChild(badge);
+        textArea.appendChild(msgDiv);
+
+        slide.appendChild(mathArea);
+        slide.appendChild(textArea);
+        
+        return slide;
+    }
+</script>
 </body>
 </html>
