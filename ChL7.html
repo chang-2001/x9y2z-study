@@ -24,11 +24,11 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            transition: background-color 0.2s; /* 背景閃爍過場效果 */
+            transition: background-color 0.2s;
         }
 
         #game-container { 
-            width: 90%;
+            width: 95%;
             max-width: 850px; 
             background: white; 
             padding: 30px; 
@@ -38,57 +38,51 @@
             flex-direction: column;
         }
         
-        /* 標題與資訊 */
         .info-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         #progress { font-size: 18px; color: #7f8c8d; font-weight: bold; }
 
-        /* 倒數圓圈動畫 */
+        .timer-container { position: relative; display: inline-block; margin: 10px 0; }
         .timer-svg { width: 100px; height: 100px; transform: rotate(-90deg); }
         .timer-svg circle { fill: none; stroke-width: 8; stroke-linecap: round; }
         .timer-bg { stroke: #dfe4ea; }
         .timer-bar {
             stroke: #e74c3c;
-            stroke-dasharray: 345;
+            stroke-dasharray: 283; /* 2 * PI * 45 */
             transition: stroke-dasharray 1s linear;
         }
-        .timer-container { position: relative; display: inline-block; margin: 10px 0; }
         .timer-text {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 2rem; font-weight: bold; color: var(--secondary);
         }
 
-        /* 題目顯示區 */
         .sentence { font-size: 32px; line-height: 1.8; margin: 20px 0 30px 0; min-height: 100px; padding: 0 20px; color: var(--secondary); word-break: break-all; }
         
-        /* 錯字樣式更新：初始狀態跟一般字一樣 */
         .wrong-char { 
             cursor: pointer; 
             color: inherit; 
-            border-bottom: none; 
+            border-bottom: 2px dashed #3498db; 
             transition: 0.3s; 
         }
         
-        /* 錯字樣式更新：點擊後的狀態，變灰色並加上刪除線 */
         .wrong-char.checked {
-            color: #bdc3c7 !important; /* 灰色 */
-            text-decoration: line-through; /* 刪除線 */
+            color: #bdc3c7 !important;
+            text-decoration: line-through;
+            border-bottom: none;
         }
 
-        /* 選項按鈕樣式 */
         #options-area { display: none; }
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .btn-option {
-            display: inline-block; font-size: 28px; font-weight: bold; padding: 15px 20px;
-            border: 4px solid black; background: white; cursor: pointer; border-radius: 12px; transition: 0.2s;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 28px; font-weight: bold; padding: 20px;
+            border: 4px solid #2c3e50; background: white; cursor: pointer; border-radius: 12px; transition: 0.2s;
         }
-        .btn-option:hover { background: #f1f2f6; transform: translateY(-2px); }
+        .btn-option:hover { background: #f1f2f6; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 
-        /* 開始與結算頁面按鈕 */
         .btn { padding: 15px 30px; font-size: 1.5rem; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; transition: all 0.2s; color: white; }
         .btn-start { background: var(--primary); width: 250px; margin-top: 20px; }
         .btn-start:hover { transform: scale(1.05); background: #2980b9; }
 
-        /* 結算頁面 */
         #score-screen { flex-grow: 1; display: flex; flex-direction: column; }
         .score-display { font-size: 40px; font-weight: bold; color: #e67e22; margin: 10px 0; }
         #review-box { flex-grow: 1; overflow-y: auto; background: #fff5f5; border-radius: 15px; margin: 20px 0; padding: 20px; border: 1px solid #ffdec9; text-align: left; max-height: 400px; }
@@ -96,25 +90,23 @@
         .btn-container { display: flex; gap: 15px; justify-content: center; margin-top: 10px; }
         .btn-retry { background: var(--primary); flex: 1; }
         .btn-home { background: var(--home-btn); flex: 1; text-decoration: none; display: flex; justify-content: center; align-items: center; color: white;}
-        .btn-retry:hover { background: #2980b9; }
-        .btn-home:hover { background: #7f8c8d; }
 
         .hidden { display: none !important; }
 
         @media (max-width: 600px) {
             .options-grid { grid-template-columns: 1fr; }
             .sentence { font-size: 26px; }
-            .btn-option { font-size: 22px; }
+            .btn-option { font-size: 24px; padding: 15px; }
         }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <!-- 起始畫面 (需點擊以啟動音效引擎) -->
+    <!-- 起始畫面 -->
     <div id="start-screen">
         <h1 style="color: var(--primary); font-size: 2.5rem;">⚾ 第七課：棒球英雄夢</h1>
-        <p style="font-size: 1.2rem; color: #555;">共 20 題挑戰，每題 5 分。<br>注意倒數時間，挑戰滿分吧！</p>
+        <p style="font-size: 1.2rem; color: #555;">找出錯字或填入正確詞彙<br>每題 5 分，挑戰滿分！</p>
         <button class="btn btn-start" onclick="startGame()">開始挑戰</button>
     </div>
 
@@ -141,227 +133,149 @@
     <div id="score-screen" class="hidden">
         <h2 style="margin-top:0; color: var(--secondary); font-size: 2rem;">挑戰結束！</h2>
         <div class="score-display">最終得分：<span id="final-score">0</span></div>
-        
         <div id="review-box"></div>
-
         <div class="btn-container">
             <button class="btn btn-retry" onclick="location.reload()">🔄 重新挑戰</button>
-            <a href="index.html" class="btn btn-home">🏠 回到首頁</a>
+            <a href="#" class="btn btn-home">🏠 回到首頁</a>
         </div>
     </div>
 </div>
 
 <script>
-    /* --- 音效引擎 (Web Audio API) --- */
+    /* --- 音效引擎 --- */
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx;
-
-    function initAudio() {
-        if (!audioCtx) audioCtx = new AudioContext();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-    }
-
+    function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
     function playSound(type) {
         if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        osc.connect(gain); gain.connect(audioCtx.destination);
         const now = audioCtx.currentTime;
-
         if (type === 'correct') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(523.25, now); // C5
-            osc.frequency.exponentialRampToValueAtTime(880.00, now + 0.15); // A5
-            gain.gain.setValueAtTime(0.3, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now);
-            osc.stop(now + 0.3);
+            osc.frequency.setValueAtTime(523.25, now); osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+            gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
         } else {
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(220.00, now); // A3
-            osc.frequency.exponentialRampToValueAtTime(146.83, now + 0.2); // D3
-            gain.gain.setValueAtTime(0.3, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-            osc.start(now);
-            osc.stop(now + 0.5);
+            osc.frequency.setValueAtTime(220, now); osc.frequency.linearRampToValueAtTime(110, now + 0.2);
+            gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.4);
         }
+        osc.start(); osc.stop(now + 0.4);
     }
 
     /* --- 題庫資料 --- */
     const lessonData = [
-        { type: "typo", display: "這件事在學校已經家喻戶晚了。", wrong: "晚", options: ["曉", "澆"], limit: 60 },
-        { type: "typo", display: "小明從小體溺多病，常去看醫生。", wrong: "溺", options: ["弱", "粥"], limit: 60 },
-        { type: "typo", display: "爸爸淮許我今天可以去公園玩。", wrong: "淮", options: ["准", "淮"], limit: 60 },
-        { type: "typo", display: "他在關鍵時刻被三振出菊了。", wrong: "菊", options: ["局", "居"], limit: 60 },
-        { type: "typo", display: "失敗了要認真檢討，不要自討末趣。", wrong: "末", options: ["沒", "未"], limit: 60 },
-        { type: "typo", display: "他在比塞中打出了一支全壘打。", wrong: "塞", options: ["賽", "塞"], limit: 60 },
-        { type: "typo", display: "他希望自己的溺點不要被對手發現。", wrong: "溺", options: ["弱", "粥"], limit: 60 },
-        { type: "typo", display: "他震臂高呼，帶領大家前進。", wrong: "震", options: ["振", "辰"], limit: 60 },
-        { type: "typo", display: "這題數學對他來說易如返掌。", wrong: "返", options: ["反", "返"], limit: 60 },
-        { type: "typo", display: "貨船運輪了大量的貨物到港口。", wrong: "輪", options: ["輸", "輪"], limit: 60 },
-        
-        { type: "vocab", text: "即使情況不利，我們也要爭取[____]。", options: ["勝利", "勝訴"], correct: "勝利", limit: 30 },
-        { type: "vocab", text: "這家店賣的[____]非常新鮮好吃。", options: ["菠菜", "波菜"], correct: "菠菜", limit: 30 },
-        { type: "vocab", text: "既然做錯了，就應該好好[____]。", options: ["檢討", "討厭"], correct: "檢討", limit: 30 },
-        { type: "vocab", text: "兩軍交戰，雙方[____]分明。", options: ["壁壘", "疊羅漢"], correct: "壁壘", limit: 30 },
-        { type: "vocab", text: "他不小心被[____]擊中，保送上一壘。", options: ["觸身球", "全壘打"], correct: "觸身球", limit: 30 },
-
-        { type: "idiom", text: "聽到好消息，全場觀眾[____]。", options: ["振奮人心", "哀鴻遍野"], correct: "振奮人心", limit: 60 },
-        { type: "idiom", text: "這支球隊果然[____]，第一場就贏了。", options: ["旗開得勝", "孤立無援"], correct: "旗開得勝", limit: 60 },
-        { type: "idiom", text: "蚊子飛來飛去，真是讓人[____]。", options: ["不勝其擾", "出奇制勝"], correct: "不勝其擾", limit: 60 },
-        { type: "idiom", text: "雖然分數落後，但我們最後[____]了。", options: ["反敗為勝", "自討苦吃"], correct: "反敗為勝", limit: 60 },
-        { type: "idiom", text: "這件事情他處理得很好，[____]沒有任何人受到傷害。", options: ["顧全大局", "三振出局"], correct: "顧全大局", limit: 60 }
+        { type: "typo", display: "這件事在學校已經家喻戶晚了。", wrong: "晚", options: ["曉", "澆"], limit: 15 },
+        { type: "typo", display: "小明從小體溺多病，常去看醫生。", wrong: "溺", options: ["弱", "粥"], limit: 15 },
+        { type: "typo", display: "爸爸淮許我今天可以去公園玩。", wrong: "淮", options: ["准", "淮"], limit: 15 },
+        { type: "typo", display: "他在關鍵時刻被三振出菊了。", wrong: "菊", options: ["局", "居"], limit: 15 },
+        { type: "typo", display: "失敗了要認真檢討，不要自討末趣。", wrong: "末", options: ["沒", "未"], limit: 15 },
+        { type: "typo", display: "他在比塞中打出了一支全壘打。", wrong: "塞", options: ["賽", "塞"], limit: 15 },
+        { type: "typo", display: "他希望自己的溺點不要被對手發現。", wrong: "溺", options: ["弱", "粥"], limit: 15 },
+        { type: "typo", display: "他震臂高呼，帶領大家前進。", wrong: "震", options: ["振", "辰"], limit: 15 },
+        { type: "typo", display: "這題數學對他來說易如返掌。", wrong: "返", options: ["反", "返"], limit: 15 },
+        { type: "typo", display: "貨船運輪了大量的貨物到港口。", wrong: "輪", options: ["輸", "輪"], limit: 15 },
+        { type: "vocab", text: "即使情況不利，我們也要爭取[____]。", options: ["勝利", "勝訴"], correct: "勝利", limit: 10 },
+        { type: "vocab", text: "這家店賣的[____]非常新鮮好吃。", options: ["菠菜", "波菜"], correct: "菠菜", limit: 10 },
+        { type: "vocab", text: "既然做錯了，就應該好好[____]。", options: ["檢討", "討厭"], correct: "檢討", limit: 10 },
+        { type: "vocab", text: "兩軍交戰，雙方[____]分明。", options: ["壁壘", "疊羅漢"], correct: "壁壘", limit: 10 },
+        { type: "vocab", text: "他不小心被[____]擊中，保送上一壘。", options: ["觸身球", "全壘打"], correct: "觸身球", limit: 10 },
+        { type: "idiom", text: "聽到好消息，全場觀眾[____]。", options: ["振奮人心", "哀鴻遍野"], correct: "振奮人心", limit: 15 },
+        { type: "idiom", text: "這支球隊果然[____]，第一場就贏了。", options: ["旗開得勝", "孤立無援"], correct: "旗開得勝", limit: 15 },
+        { type: "idiom", text: "蚊子飛來飛去，真是讓人[____]。", options: ["不勝其擾", "出奇制勝"], correct: "不勝其擾", limit: 15 },
+        { type: "idiom", text: "雖然分數落後，但我們最後[____]了。", options: ["反敗為勝", "自討苦吃"], correct: "反敗為勝", limit: 15 },
+        { type: "idiom", text: "這件事情他處理得很好，[____]沒有任何人受到傷害。", options: ["顧全大局", "三振出局"], correct: "顧全大局", limit: 15 }
     ];
 
-    let currentIdx = 0;
-    let score = 0;
-    let timeLeft;
-    let timerInterval;
-    let wrongList = [];
-    const dashMax = 283; // 2 * PI * r (r=45) 圓周長
+    let currentIdx = 0, score = 0, timeLeft, timerInterval, wrongList = [];
+    const dashMax = 283;
+    const sentenceEl = document.getElementById('sentence-display'), optionsEl = document.getElementById('options-area');
+    const timerTextEl = document.getElementById('timer-text'), timerBarEl = document.getElementById('timer-bar');
+    const progressEl = document.getElementById('progress'), currentScoreEl = document.getElementById('current-score');
 
-    const sentenceEl = document.getElementById('sentence-display');
-    const optionsEl = document.getElementById('options-area');
-    const timerTextEl = document.getElementById('timer-text');
-    const timerBarEl = document.getElementById('timer-bar');
-    const progressEl = document.getElementById('progress');
-    const currentScoreEl = document.getElementById('current-score');
-
-    function startGame() {
-        initAudio();
-        document.getElementById('start-screen').classList.add('hidden');
-        document.getElementById('quiz-ui').classList.remove('hidden');
-        initQuestion();
-    }
+    function startGame() { initAudio(); document.getElementById('start-screen').classList.add('hidden'); document.getElementById('quiz-ui').classList.remove('hidden'); initQuestion(); }
 
     function initQuestion() {
-        if (currentIdx >= lessonData.length) {
-            return endGame();
-        }
-
+        if (currentIdx >= lessonData.length) return endGame();
         const q = lessonData[currentIdx];
         progressEl.innerText = `題目：${currentIdx + 1} / ${lessonData.length}`;
         currentScoreEl.innerText = score;
         optionsEl.style.display = 'none';
-        optionsEl.innerHTML = '';
         
         startTimer(q.limit);
-
         if (q.type === 'typo') {
             let htmlText = "";
-            for (let char of q.display) {
-                if (char === q.wrong) {
-                    // 加入 event 參數，以便點擊時知道是哪一個字
-                    htmlText += `<span class="wrong-char" onclick="showOptions(event)">${char}</span>`;
-                } else {
-                    htmlText += `<span>${char}</span>`;
-                }
-            }
+            [...q.display].forEach(char => {
+                if (char === q.wrong) htmlText += `<span class="wrong-char" onclick="showOptions(event)">${char}</span>`;
+                else htmlText += `<span>${char}</span>`;
+            });
             sentenceEl.innerHTML = htmlText;
         } else {
             sentenceEl.innerText = q.text;
-            showOptions(); // 非錯字題直接顯示選項，不需要 event
+            showOptions();
         }
     }
 
-    // 接收 event 參數
     function showOptions(event) {
+        if (event) event.target.classList.add('checked');
         const q = lessonData[currentIdx];
+        const correctAns = q.type === 'typo' ? q.options[0] : q.correct;
         
-        // 如果有點擊事件（代表是錯字題被點擊了），就幫那個字加上 .checked 樣式
-        if (event && event.target) {
-            event.target.classList.add('checked');
+        // 隨機打亂邏輯
+        let choices = [...q.options];
+        for (let i = choices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [choices[i], choices[j]] = [choices[j], choices[i]];
         }
 
         optionsEl.innerHTML = '';
-        const correctAns = q.type === 'typo' ? q.options[0] : q.correct;
-        
-        // 隨機打亂選項順序
-        const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
-
-        shuffledOptions.forEach(opt => {
+        choices.forEach(opt => {
             const btn = document.createElement('div');
             btn.className = 'btn-option';
             btn.innerText = opt;
-            btn.onclick = () => handleAnswer(opt === correctAns, `你選了：${opt}`, correctAns);
+            btn.onclick = () => handleAnswer(opt === correctAns, opt, correctAns);
             optionsEl.appendChild(btn);
         });
-        
-        optionsEl.style.display = 'grid'; // 顯示網格
+        optionsEl.style.display = 'grid';
     }
 
     function startTimer(limit) {
-        timeLeft = limit;
-        updateTimerUI(limit);
-        clearInterval(timerInterval);
-        
+        timeLeft = limit; updateTimerUI(limit); clearInterval(timerInterval);
         timerInterval = setInterval(() => {
-            timeLeft--;
-            updateTimerUI(limit);
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                const q = lessonData[currentIdx];
-                const correctAns = q.type === 'typo' ? q.options[0] : q.correct;
-                handleAnswer(false, "時間到！", correctAns);
-            }
+            timeLeft--; updateTimerUI(limit);
+            if (timeLeft <= 0) { clearInterval(timerInterval); handleAnswer(false, "超時", (lessonData[currentIdx].type === 'typo' ? lessonData[currentIdx].options[0] : lessonData[currentIdx].correct)); }
         }, 1000);
     }
 
     function updateTimerUI(limit) {
         timerTextEl.innerText = timeLeft;
-        const offset = (dashMax * timeLeft) / limit;
-        timerBarEl.style.strokeDasharray = `${offset} ${dashMax}`;
+        timerBarEl.style.strokeDasharray = `${(dashMax * timeLeft) / limit} ${dashMax}`;
     }
 
-    function handleAnswer(isCorrect, reason, correctAns) {
+    function handleAnswer(isCorrect, userChoice, correctAns) {
         clearInterval(timerInterval);
-        const q = lessonData[currentIdx];
-        const questionText = q.type === 'typo' ? q.display : q.text;
-
-        if (isCorrect) {
-            score += 5;
-            playSound('correct');
-            flashEffect('green');
-        } else {
-            wrongList.push({ q: questionText, correct: correctAns, wrong: reason });
-            playSound('wrong');
-            flashEffect('red');
-        }
-        
-        currentScoreEl.innerText = score;
+        if (isCorrect) { score += 5; playSound('correct'); flashEffect('green'); }
+        else { wrongList.push({ q: (lessonData[currentIdx].type === 'typo' ? lessonData[currentIdx].display : lessonData[currentIdx].text), correct: correctAns, user: userChoice }); playSound('wrong'); flashEffect('red'); }
         currentIdx++;
-        
-        // 延遲 400 毫秒進入下一題，讓孩子看到閃爍特效
-        setTimeout(initQuestion, 400);
+        setTimeout(initQuestion, 500);
     }
 
     function flashEffect(color) {
-        const body = document.body;
-        body.style.backgroundColor = color === 'green' ? 'var(--success)' : 'var(--error)';
-        setTimeout(() => { body.style.backgroundColor = 'var(--bg)'; }, 200);
+        document.body.style.backgroundColor = (color === 'green' ? 'var(--success)' : 'var(--error)');
+        setTimeout(() => document.body.style.backgroundColor = 'var(--bg)', 250);
     }
 
     function endGame() {
         document.getElementById('quiz-ui').classList.add('hidden');
         document.getElementById('score-screen').classList.remove('hidden');
         document.getElementById('final-score').innerText = score;
-
-        const reviewDiv = document.getElementById('review-box');
-        if (wrongList.length > 0) {
-            let html = '<h3 style="color: #d35400; margin-top:0;">🔍 錯題紅修單：</h3><div>';
-            wrongList.forEach((item, index) => {
-                html += `<div style="margin-bottom:15px; border-bottom: 2px dashed #ffdec9; padding-bottom:10px;">
-                    <div style="font-weight:bold; font-size:1.1rem; color: #2c3e50;">${index + 1}. ${item.q}</div>
-                    <div style="color:var(--success); font-size:1rem; font-weight: bold; margin-top: 5px;">✅ 正確答案：${item.correct}</div>
-                    <div style="color:#7f8c8d; font-size:0.9rem;">(${item.wrong})</div>
-                </div>`;
-            });
-            html += '</div>';
-            reviewDiv.innerHTML = html;
-        } else {
-            reviewDiv.innerHTML = '<h3 style="color: var(--success); font-size: 1.5rem; text-align: center;">🌟 太強了！全部答對！滿分過關！</h3>';
-        }
+        let html = wrongList.length > 0 ? '<h3 style="color:#d35400">🔍 錯題檢討：</h3>' : '<h3 style="color:var(--success)">🌟 完美的表現！全部答對！</h3>';
+        wrongList.forEach((item, i) => {
+            html += `<div style="margin-bottom:15px; border-bottom:1px solid #ffdec9; padding-bottom:8px;">
+                <b>${i+1}. ${item.q}</b><br>
+                <span style="color:var(--success)">正確答案：${item.correct}</span> | <span style="color:#7f8c8d">你的選擇：${item.user}</span>
+            </div>`;
+        });
+        document.getElementById('review-box').innerHTML = html;
     }
 </script>
 
