@@ -6,7 +6,7 @@
     <title>第八課：夢幻全壘打 - 挑戰賽</title>
     <style>
         :root {
-            --primary: #e67e22; /* 第八課換成充滿活力的橘色系 */
+            --primary: #e67e22; /* 充滿活力的橘色 */
             --secondary: #2c3e50;
             --bg: #fdf2e9;
             --success: #2ed573;
@@ -28,67 +28,61 @@
         }
 
         #game-container { 
-            width: 90%;
+            width: 95%;
             max-width: 850px; 
             background: white; 
             padding: 30px; 
             border-radius: 20px; 
-            box-shadow: 0 10px 30px rgba(230, 126, 34, 0.15); 
+            box-shadow: 0 10px 30px rgba(230, 126, 34, 0.2); 
             display: flex;
             flex-direction: column;
         }
         
-        /* 標題與資訊 */
         .info-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         #progress { font-size: 18px; color: #7f8c8d; font-weight: bold; }
 
-        /* 倒數圓圈動畫 */
+        .timer-container { position: relative; display: inline-block; margin: 10px 0; }
         .timer-svg { width: 100px; height: 100px; transform: rotate(-90deg); }
         .timer-svg circle { fill: none; stroke-width: 8; stroke-linecap: round; }
         .timer-bg { stroke: #dfe4ea; }
         .timer-bar {
             stroke: #e74c3c;
-            stroke-dasharray: 345;
+            stroke-dasharray: 283; /* 2 * PI * 45 */
             transition: stroke-dasharray 1s linear;
         }
-        .timer-container { position: relative; display: inline-block; margin: 10px 0; }
         .timer-text {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 2rem; font-weight: bold; color: var(--secondary);
         }
 
-        /* 題目顯示區 */
         .sentence { font-size: 32px; line-height: 1.8; margin: 20px 0 30px 0; min-height: 100px; padding: 0 20px; color: var(--secondary); word-break: break-all; }
         
-        /* 錯字樣式更新：初始狀態跟一般字一樣 */
         .wrong-char { 
             cursor: pointer; 
             color: inherit; 
-            border-bottom: none; 
+            border-bottom: 2px dashed #e67e22; /* 增加視覺提示，提示學生這裡可以點擊 */
             transition: 0.3s; 
         }
         
-        /* 錯字樣式更新：點擊後的狀態，變灰色並加上刪除線 */
         .wrong-char.checked {
             color: #bdc3c7 !important; 
             text-decoration: line-through; 
+            border-bottom: none;
         }
 
-        /* 選項按鈕樣式 */
         #options-area { display: none; }
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .btn-option {
-            display: inline-block; font-size: 28px; font-weight: bold; padding: 15px 20px;
-            border: 4px solid black; background: white; cursor: pointer; border-radius: 12px; transition: 0.2s;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 28px; font-weight: bold; padding: 15px 20px;
+            border: 4px solid #2c3e50; background: white; cursor: pointer; border-radius: 12px; transition: 0.2s;
         }
-        .btn-option:hover { background: #fff5eb; transform: translateY(-2px); border-color: var(--primary); }
+        .btn-option:hover { background: #fff5eb; transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 
-        /* 開始與結算頁面按鈕 */
         .btn { padding: 15px 30px; font-size: 1.5rem; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; transition: all 0.2s; color: white; }
         .btn-start { background: var(--primary); width: 250px; margin-top: 20px; }
         .btn-start:hover { transform: scale(1.05); background: #d35400; }
 
-        /* 結算頁面 */
         #score-screen { flex-grow: 1; display: flex; flex-direction: column; }
         .score-display { font-size: 40px; font-weight: bold; color: var(--primary); margin: 10px 0; }
         #review-box { flex-grow: 1; overflow-y: auto; background: #fffdfa; border-radius: 15px; margin: 20px 0; padding: 20px; border: 1px solid #ffeaa7; text-align: left; max-height: 400px; }
@@ -96,15 +90,13 @@
         .btn-container { display: flex; gap: 15px; justify-content: center; margin-top: 10px; }
         .btn-retry { background: var(--primary); flex: 1; }
         .btn-home { background: var(--home-btn); flex: 1; text-decoration: none; display: flex; justify-content: center; align-items: center; color: white;}
-        .btn-retry:hover { background: #d35400; }
-        .btn-home:hover { background: #7f8c8d; }
 
         .hidden { display: none !important; }
 
         @media (max-width: 600px) {
             .options-grid { grid-template-columns: 1fr; }
             .sentence { font-size: 26px; }
-            .btn-option { font-size: 22px; }
+            .btn-option { font-size: 24px; }
         }
     </style>
 </head>
@@ -113,7 +105,7 @@
 <div id="game-container">
     <div id="start-screen">
         <h1 style="color: var(--primary); font-size: 2.5rem;">⚾ 第八課：夢幻全壘打</h1>
-        <p style="font-size: 1.2rem; color: #555;">共 20 題挑戰，每題 5 分。<br>注意倒數時間，挑戰滿分吧！</p>
+        <p style="font-size: 1.2rem; color: #555;">共 20 題挑戰，每題 5 分。<br>找出錯字或填入詞彙，衝向滿分！</p>
         <button class="btn btn-start" onclick="startGame()">開始挑戰</button>
     </div>
 
@@ -138,9 +130,7 @@
     <div id="score-screen" class="hidden">
         <h2 style="margin-top:0; color: var(--secondary); font-size: 2rem;">挑戰結束！</h2>
         <div class="score-display">最終得分：<span id="final-score">0</span></div>
-        
         <div id="review-box"></div>
-
         <div class="btn-container">
             <button class="btn btn-retry" onclick="location.reload()">🔄 重新挑戰</button>
             <a href="index.html" class="btn btn-home">🏠 回到首頁</a>
@@ -161,62 +151,49 @@
         if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        osc.connect(gain); gain.connect(audioCtx.destination);
         const now = audioCtx.currentTime;
-
         if (type === 'correct') {
-            osc.type = 'sine';
             osc.frequency.setValueAtTime(523.25, now);
             osc.frequency.exponentialRampToValueAtTime(880.00, now + 0.15);
-            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.setValueAtTime(0.2, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now);
-            osc.stop(now + 0.3);
         } else {
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(220.00, now);
-            osc.frequency.exponentialRampToValueAtTime(146.83, now + 0.2);
-            gain.gain.setValueAtTime(0.3, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-            osc.start(now);
-            osc.stop(now + 0.5);
+            osc.frequency.setValueAtTime(220, now);
+            osc.frequency.exponentialRampToValueAtTime(110, now + 0.2);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
         }
+        osc.start(); osc.stop(now + 0.4);
     }
 
     /* --- 題庫資料 (第八課專屬) --- */
     const lessonData = [
-        // 易錯字辨正 (點擊錯字)
-        { type: "typo", display: "他跑完馬拉松後，累得氣喘如午。", wrong: "午", options: ["牛", "午"], limit: 60 },
-        { type: "typo", display: "他最近心情很煩躁，容易因躁音發脾氣。", wrong: "噪", options: ["燥", "噪"], limit: 60 },
-        { type: "typo", display: "大家都在為明天的比賽拼命練習。", wrong: "拼", options: ["拚", "拼"], limit: 60 },
-        { type: "typo", display: "弟弟因為打破玻璃而拚罵了。", wrong: "拚", options: ["挨", "拚"], limit: 60 },
-        { type: "typo", display: "這件事情讓他猶預不決。", wrong: "預", options: ["豫", "預"], limit: 60 },
-        { type: "typo", display: "阿公的身體狀況每況癒下。", wrong: "癒", options: ["愈", "癒"], limit: 60 },
-        { type: "typo", display: "觀眾席上傳來巨大的鼓燥聲。", wrong: "燥", options: ["噪", "燥"], limit: 60 },
-        { type: "typo", display: "這件事他處理得不得要嶺。", wrong: "嶺", options: ["領", "嶺"], limit: 60 },
-        { type: "typo", display: "我們終於瀛得了這場棒球賽。", wrong: "瀛", options: ["贏", "嬴"], limit: 60 },
-        { type: "typo", display: "犯人被警察包圍，簡直是叉翅難飛。", wrong: "叉", options: ["插", "捶"], limit: 60 },
+        { type: "typo", display: "他跑完馬拉松後，累得氣喘如午。", wrong: "午", options: ["牛", "午"], limit: 30 },
+        { type: "typo", display: "他最近心情很煩躁，容易因躁音發脾氣。", wrong: "躁", options: ["噪", "燥"], limit: 30 },
+        { type: "typo", display: "大家都在為明天的比賽拼命練習。", wrong: "拼", options: ["拚", "拼"], limit: 30 },
+        { type: "typo", display: "弟弟因為打破玻璃而拚罵了。", wrong: "拚", options: ["挨", "拚"], limit: 30 },
+        { type: "typo", display: "這件事情讓他猶預不決。", wrong: "預", options: ["豫", "預"], limit: 30 },
+        { type: "typo", display: "阿公的身體狀況每況癒下。", wrong: "癒", options: ["愈", "癒"], limit: 30 },
+        { type: "typo", display: "觀眾席上傳來巨大的鼓燥聲。", wrong: "燥", options: ["噪", "燥"], limit: 30 },
+        { type: "typo", display: "這件事他處理得不得要嶺。", wrong: "嶺", options: ["領", "嶺"], limit: 30 },
+        { type: "typo", display: "我們終於瀛得了這場棒球賽。", wrong: "瀛", options: ["贏", "嬴"], limit: 30 },
+        { type: "typo", display: "犯人被警察包圍，簡直是叉翅難飛。", wrong: "叉", options: ["插", "捶"], limit: 30 },
         
-        // 語詞與成語選填
-        { type: "vocab", text: "比賽進入最後一局，我們目前暫時[____]。", options: ["領先", "落後"], correct: "領先", limit: 30 },
-        { type: "vocab", text: "就算再害怕，我也要[____]上台演講。", options: ["硬著頭皮", "彎腰駝背"], correct: "硬著頭皮", limit: 30 },
-        { type: "vocab", text: "[____]，衝就對了！", options: ["不管三七二十一", "猶豫不決"], correct: "不管三七二十一", limit: 30 },
-        { type: "vocab", text: "那家餐廳曾經[____]，現在卻關門大吉了。", options: ["名噪一時", "雖敗猶榮"], correct: "名噪一時", limit: 30 },
-        { type: "vocab", text: "這道菜的味道實在太[____]了，我很難接受。", options: ["衝", "淡"], correct: "衝", limit: 30 },
+        { type: "vocab", text: "比賽進入最後一局，我們目前暫時[____]。", options: ["領先", "落後"], correct: "領先", limit: 20 },
+        { type: "vocab", text: "就算再害怕，我也要[____]上台演講。", options: ["硬著頭皮", "彎腰駝背"], correct: "硬著頭皮", limit: 20 },
+        { type: "vocab", text: "[____]，衝就對了！", options: ["不管三七二十一", "猶豫不決"], correct: "不管三七二十一", limit: 20 },
+        { type: "vocab", text: "那家餐廳曾經[____]，現在卻關門大吉了。", options: ["名噪一時", "雖敗猶榮"], correct: "名噪一時", limit: 20 },
+        { type: "vocab", text: "這道菜的味道實在太[____]了，我很難接受。", options: ["衝", "淡"], correct: "衝", limit: 20 },
 
-        { type: "idiom", text: "他們是[____]的好朋友，有困難一定會互相幫忙。", options: ["肝膽相照", "苟延殘喘"], correct: "肝膽相照", limit: 60 },
-        { type: "idiom", text: "為了朋友，他絕對願意[____]。", options: ["兩肋插刀", "過猶不及"], correct: "兩肋插刀", limit: 60 },
-        { type: "idiom", text: "這支球隊雖然輸了比賽，但展現了拼搏精神，可以說是[____]。", options: ["雖敗猶榮", "怒髮衝冠"], correct: "雖敗猶榮", limit: 60 },
-        { type: "idiom", text: "聽說對手很強，但我們還是要勇敢[____]。", options: ["衝鋒陷陣", "記憶猶新"], correct: "衝鋒陷陣", limit: 60 },
-        { type: "idiom", text: "不要再[____]了，趕快下決定吧！", options: ["猶豫不決", "言猶在耳"], correct: "猶豫不決", limit: 60 }
+        { type: "idiom", text: "他們是[____]的好朋友，有困難一定會互相幫忙。", options: ["肝膽相照", "苟延殘喘"], correct: "肝膽相照", limit: 30 },
+        { type: "idiom", text: "為了朋友，他絕對願意[____]。", options: ["兩肋插刀", "過猶不及"], correct: "兩肋插刀", limit: 30 },
+        { type: "idiom", text: "這支球隊雖然輸了比賽，但展現了拼搏精神，可以說是[____]。", options: ["雖敗猶榮", "怒髮衝冠"], correct: "雖敗猶榮", limit: 30 },
+        { type: "idiom", text: "聽說對手很強，但我們還是要勇敢[____]。", options: ["衝鋒陷陣", "記憶猶新"], correct: "衝鋒陷陣", limit: 30 },
+        { type: "idiom", text: "不要再[____]了，趕快下決定吧！", options: ["猶豫不決", "言猶在耳"], correct: "猶豫不決", limit: 30 }
     ];
 
-    let currentIdx = 0;
-    let score = 0;
-    let timeLeft;
-    let timerInterval;
-    let wrongList = [];
+    let currentIdx = 0, score = 0, timeLeft, timerInterval, wrongList = [];
     const dashMax = 283; 
 
     const sentenceEl = document.getElementById('sentence-display');
@@ -234,9 +211,7 @@
     }
 
     function initQuestion() {
-        if (currentIdx >= lessonData.length) {
-            return endGame();
-        }
+        if (currentIdx >= lessonData.length) return endGame();
 
         const q = lessonData[currentIdx];
         progressEl.innerText = `題目：${currentIdx + 1} / ${lessonData.length}`;
@@ -264,24 +239,25 @@
 
     function showOptions(event) {
         const q = lessonData[currentIdx];
-        
-        if (event && event.target) {
-            event.target.classList.add('checked');
-        }
+        if (event && event.target) event.target.classList.add('checked');
 
         optionsEl.innerHTML = '';
         const correctAns = q.type === 'typo' ? q.options[0] : q.correct;
         
-        const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+        // 修正後的隨機洗牌演算法 (Fisher-Yates)
+        let shuffledOptions = [...q.options];
+        for (let i = shuffledOptions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+        }
 
         shuffledOptions.forEach(opt => {
             const btn = document.createElement('div');
             btn.className = 'btn-option';
             btn.innerText = opt;
-            btn.onclick = () => handleAnswer(opt === correctAns, `你選了：${opt}`, correctAns);
+            btn.onclick = () => handleAnswer(opt === correctAns, opt, correctAns);
             optionsEl.appendChild(btn);
         });
-        
         optionsEl.style.display = 'grid'; 
     }
 
@@ -289,26 +265,23 @@
         timeLeft = limit;
         updateTimerUI(limit);
         clearInterval(timerInterval);
-        
         timerInterval = setInterval(() => {
             timeLeft--;
             updateTimerUI(limit);
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 const q = lessonData[currentIdx];
-                const correctAns = q.type === 'typo' ? q.options[0] : q.correct;
-                handleAnswer(false, "時間到！", correctAns);
+                handleAnswer(false, "時間到", (q.type === 'typo' ? q.options[0] : q.correct));
             }
         }, 1000);
     }
 
     function updateTimerUI(limit) {
         timerTextEl.innerText = timeLeft;
-        const offset = (dashMax * timeLeft) / limit;
-        timerBarEl.style.strokeDasharray = `${offset} ${dashMax}`;
+        timerBarEl.style.strokeDasharray = `${(dashMax * timeLeft) / limit} ${dashMax}`;
     }
 
-    function handleAnswer(isCorrect, reason, correctAns) {
+    function handleAnswer(isCorrect, userChoice, correctAns) {
         clearInterval(timerInterval);
         const q = lessonData[currentIdx];
         const questionText = q.type === 'typo' ? q.display : q.text;
@@ -318,21 +291,19 @@
             playSound('correct');
             flashEffect('green');
         } else {
-            wrongList.push({ q: questionText, correct: correctAns, wrong: reason });
+            wrongList.push({ q: questionText, correct: correctAns, user: userChoice });
             playSound('wrong');
             flashEffect('red');
         }
         
         currentScoreEl.innerText = score;
         currentIdx++;
-        
-        setTimeout(initQuestion, 400);
+        setTimeout(initQuestion, 500);
     }
 
     function flashEffect(color) {
-        const body = document.body;
-        body.style.backgroundColor = color === 'green' ? 'var(--success)' : 'var(--error)';
-        setTimeout(() => { body.style.backgroundColor = 'var(--bg)'; }, 200);
+        document.body.style.backgroundColor = color === 'green' ? 'var(--success)' : 'var(--error)';
+        setTimeout(() => { document.body.style.backgroundColor = 'var(--bg)'; }, 250);
     }
 
     function endGame() {
@@ -342,18 +313,17 @@
 
         const reviewDiv = document.getElementById('review-box');
         if (wrongList.length > 0) {
-            let html = '<h3 style="color: #d35400; margin-top:0;">🔍 錯題紅修單：</h3><div>';
+            let html = '<h3 style="color: #d35400; margin-top:0;">🔍 錯題紅修單：</h3>';
             wrongList.forEach((item, index) => {
                 html += `<div style="margin-bottom:15px; border-bottom: 2px dashed #ffdec9; padding-bottom:10px;">
-                    <div style="font-weight:bold; font-size:1.1rem; color: #2c3e50;">${index + 1}. ${item.q}</div>
-                    <div style="color:var(--success); font-size:1rem; font-weight: bold; margin-top: 5px;">✅ 正確答案：${item.correct}</div>
-                    <div style="color:#7f8c8d; font-size:0.9rem;">(${item.wrong})</div>
+                    <div style="font-weight:bold; color: #2c3e50;">${index + 1}. ${item.q}</div>
+                    <div style="color:var(--success); font-weight: bold; margin-top: 5px;">✅ 正確答案：${item.correct}</div>
+                    <div style="color:#7f8c8d; font-size:0.9rem;">(你的選擇：${item.user})</div>
                 </div>`;
             });
-            html += '</div>';
             reviewDiv.innerHTML = html;
         } else {
-            reviewDiv.innerHTML = '<h3 style="color: var(--success); font-size: 1.5rem; text-align: center;">🌟 太強了！全部答對！滿分過關！</h3>';
+            reviewDiv.innerHTML = '<h3 style="color: var(--success); text-align: center;">🌟 夢幻全壘打！全部答對了！</h3>';
         }
     }
 </script>
