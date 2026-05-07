@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>小數點乘法降維教學引擎</title>
+    <title>小數點乘法教學</title>
     <style>
         body {
             font-family: '微軟正黑體', sans-serif;
@@ -172,14 +172,14 @@
 <body>
 
     <div class="header">
-        <h2>爸爸的數字降維心法！小數乘法</h2>
+        <h2>爸爸的小數乘法教學</h2>
         <div>
             <input type="text" id="numA" value="0.168" placeholder="數字A">
             ×
             <input type="text" id="numB" value="2500" placeholder="數字B">
             <button onclick="executeAll()">產生教學步驟</button>
         </div>
-        <p style="color: #7f8c8d; font-size: 14px; margin-top: 10px;">特色：1.剝除0與小數點 2.核心大的在上方 3.直式堆疊 4.停車場還原精準跳位</p>
+        <p style="color: #7f8c8d; font-size: 14px; margin-top: 10px;">特色：1.剝除0與小數點 2.核心大的在上方 3.直式堆疊 4.蛋蛋與小數點火焰</p>
     </div>
 
     <div id="slides-container"></div>
@@ -238,20 +238,20 @@
             <div style="display:flex; gap: 20px; justify-content: center;">
                 <div class="comic-box">
                     <strong>數字 A：${rawA}</strong><br>
-                    小數點休息：<span class="highlight-dot">${pA.dp} 位</span><br>
-                    去停車場的 0：<span class="highlight-zero">${pA.zeros} 個</span><br>
+                    小數點火焰：<span class="highlight-dot">${pA.dp} 位</span><br>
+                    有幾個0(蛋蛋)：<span class="highlight-zero">${pA.zeros} 個</span><br>
                     核心數字：<span class="highlight-core">${pA.core}</span>
                 </div>
                 <div class="comic-box">
                     <strong>數字 B：${rawB}</strong><br>
-                    小數點休息：<span class="highlight-dot">${pB.dp} 位</span><br>
-                    去停車場的 0：<span class="highlight-zero">${pB.zeros} 個</span><br>
+                    小數點火焰：<span class="highlight-dot">${pB.dp} 位</span><br>
+                    有幾個0(蛋蛋)：<span class="highlight-zero">${pB.zeros} 個</span><br>
                     核心數字：<span class="highlight-core">${pB.core}</span>
                 </div>
             </div>
             <div class="comic-box" style="text-align:center; font-size: 26px;">
-                總計：室外休息 <span class="highlight-dot">${totalDP} 位小數</span>，
-                停車場有 <span class="highlight-zero">${totalZeros} 個 0</span>。
+                總計：有 <span class="highlight-dot">${totalDP} 位小數</span>，
+                有 <span class="highlight-zero">${totalZeros} 個蛋蛋 0</span>。
             </div>
         `;
         container.appendChild(phase1);
@@ -324,10 +324,10 @@
             <div><span class="title" style="background-color: #27ae60;">第4步：還原 0 ➔ 還原小數點！</span></div>
             <div style="padding-left: 20px;">
                 <p>1. 核心乘法的答案是：<strong>${coreResultStr}</strong></p>
-                <p>2. 把停車場的 <strong>${totalZeros} 個 0</strong> 加回來：<br>
+                <p>2. 把蛋蛋 <strong>${totalZeros} 個 0</strong> 加回來：<br>
                    ${coreResultStr} ➔ ${coreResultStr}<span class="highlight-zero">${zerosStr}</span>
                 </p>
-                <p>3. 小數點從室外回來，由右至左跳 <strong>${totalDP} 位</strong>：</p>
+                <p>3. 小數點回來，由右至左跳 <strong>${totalDP} 位</strong>：</p>
                 
                 <div class="jump-container">
                     <div class="jump-row">${digitsHtml}</div>
