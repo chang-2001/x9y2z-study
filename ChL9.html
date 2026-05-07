@@ -6,7 +6,7 @@
     <title>第九課：單車遊日月潭 - 挑戰賽</title>
     <style>
         :root {
-            --primary: #16a085; /* 第九課換成代表湖水與自然的湖水綠 */
+            --primary: #16a085; /* 代表湖水與自然的湖水綠 */
             --secondary: #2c3e50;
             --bg: #e8f8f5;
             --success: #2ed573;
@@ -28,66 +28,61 @@
         }
 
         #game-container { 
-            width: 90%;
+            width: 95%;
             max-width: 850px; 
             background: white; 
             padding: 30px; 
             border-radius: 20px; 
-            box-shadow: 0 10px 30px rgba(22, 160, 133, 0.15); 
+            box-shadow: 0 10px 30px rgba(22, 160, 133, 0.2); 
             display: flex;
             flex-direction: column;
         }
         
-        /* 標題與資訊 */
         .info-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         #progress { font-size: 18px; color: #7f8c8d; font-weight: bold; }
 
-        /* 倒數圓圈動畫 */
+        .timer-container { position: relative; display: inline-block; margin: 10px 0; }
         .timer-svg { width: 100px; height: 100px; transform: rotate(-90deg); }
         .timer-svg circle { fill: none; stroke-width: 8; stroke-linecap: round; }
         .timer-bg { stroke: #dfe4ea; }
         .timer-bar {
             stroke: #e74c3c;
-            stroke-dasharray: 345;
+            stroke-dasharray: 283; /* 2 * PI * 45 */
             transition: stroke-dasharray 1s linear;
         }
-        .timer-container { position: relative; display: inline-block; margin: 10px 0; }
         .timer-text {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 2rem; font-weight: bold; color: var(--secondary);
         }
 
-        /* 題目顯示區 */
         .sentence { font-size: 32px; line-height: 1.8; margin: 20px 0 30px 0; min-height: 100px; padding: 0 20px; color: var(--secondary); word-break: break-all; }
         
-        /* 錯字樣式 */
         .wrong-char { 
             cursor: pointer; 
             color: inherit; 
-            border-bottom: none; 
+            border-bottom: 2px dashed var(--primary); /* 輕微提示可點擊 */
             transition: 0.3s; 
         }
         
         .wrong-char.checked {
             color: #bdc3c7 !important; 
             text-decoration: line-through; 
+            border-bottom: none;
         }
 
-        /* 選項按鈕樣式 */
         #options-area { display: none; }
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .btn-option {
-            display: inline-block; font-size: 28px; font-weight: bold; padding: 15px 20px;
-            border: 4px solid black; background: white; cursor: pointer; border-radius: 12px; transition: 0.2s;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 28px; font-weight: bold; padding: 15px 20px;
+            border: 4px solid #2c3e50; background: white; cursor: pointer; border-radius: 12px; transition: 0.2s;
         }
-        .btn-option:hover { background: #e8f8f5; transform: translateY(-2px); border-color: var(--primary); }
+        .btn-option:hover { background: #e8f8f5; transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 
-        /* 開始與結算頁面按鈕 */
         .btn { padding: 15px 30px; font-size: 1.5rem; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; transition: all 0.2s; color: white; }
         .btn-start { background: var(--primary); width: 250px; margin-top: 20px; }
         .btn-start:hover { transform: scale(1.05); background: #117a65; }
 
-        /* 結算頁面 */
         #score-screen { flex-grow: 1; display: flex; flex-direction: column; }
         .score-display { font-size: 40px; font-weight: bold; color: var(--primary); margin: 10px 0; }
         #review-box { flex-grow: 1; overflow-y: auto; background: #fafdfc; border-radius: 15px; margin: 20px 0; padding: 20px; border: 1px solid #a3e4d7; text-align: left; max-height: 400px; }
@@ -95,15 +90,13 @@
         .btn-container { display: flex; gap: 15px; justify-content: center; margin-top: 10px; }
         .btn-retry { background: var(--primary); flex: 1; }
         .btn-home { background: var(--home-btn); flex: 1; text-decoration: none; display: flex; justify-content: center; align-items: center; color: white;}
-        .btn-retry:hover { background: #117a65; }
-        .btn-home:hover { background: #7f8c8d; }
 
         .hidden { display: none !important; }
 
         @media (max-width: 600px) {
             .options-grid { grid-template-columns: 1fr; }
             .sentence { font-size: 26px; }
-            .btn-option { font-size: 22px; }
+            .btn-option { font-size: 24px; }
         }
     </style>
 </head>
@@ -119,7 +112,7 @@
     <div id="quiz-ui" class="hidden">
         <div class="info-bar">
             <div id="progress">題目：1 / 20</div>
-            <div style="font-weight: bold; color: #16a085; font-size: 18px;">得分：<span id="current-score">0</span></div>
+            <div style="font-weight: bold; color: var(--primary); font-size: 18px;">得分：<span id="current-score">0</span></div>
         </div>
         
         <div class="timer-container">
@@ -137,9 +130,7 @@
     <div id="score-screen" class="hidden">
         <h2 style="margin-top:0; color: var(--secondary); font-size: 2rem;">挑戰結束！</h2>
         <div class="score-display">最終得分：<span id="final-score">0</span></div>
-        
         <div id="review-box"></div>
-
         <div class="btn-container">
             <button class="btn btn-retry" onclick="location.reload()">🔄 重新挑戰</button>
             <a href="index.html" class="btn btn-home">🏠 回到首頁</a>
@@ -160,62 +151,48 @@
         if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        osc.connect(gain); gain.connect(audioCtx.destination);
         const now = audioCtx.currentTime;
-
         if (type === 'correct') {
-            osc.type = 'sine';
             osc.frequency.setValueAtTime(523.25, now);
-            osc.frequency.exponentialRampToValueAtTime(880.00, now + 0.15);
-            gain.gain.setValueAtTime(0.3, now);
+            osc.frequency.exponentialRampToValueAtTime(880.00, now + 0.1);
+            gain.gain.setValueAtTime(0.2, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now);
-            osc.stop(now + 0.3);
         } else {
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(220.00, now);
-            osc.frequency.exponentialRampToValueAtTime(146.83, now + 0.2);
-            gain.gain.setValueAtTime(0.3, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-            osc.start(now);
-            osc.stop(now + 0.5);
+            osc.frequency.setValueAtTime(220, now);
+            osc.frequency.exponentialRampToValueAtTime(110, now + 0.2);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
         }
+        osc.start(); osc.stop(now + 0.4);
     }
 
-    /* --- 題庫資料 (第九課專屬) --- */
     const lessonData = [
-        // 易錯字辨正
-        { type: "typo", display: "這座山風景秀麗，真是山明水季。", wrong: "季", options: ["秀", "季"], limit: 60 },
-        { type: "typo", display: "我們走在木踐道上欣賞美麗的湖景。", wrong: "踐", options: ["棧", "踐"], limit: 60 },
-        { type: "typo", display: "四月底去住日月潭大飯店，我們沿塗欣賞了美麗的風景。", wrong: "塗", options: ["途", "塗"], limit: 60 },
-        { type: "typo", display: "警察經過仔細調查，終於捕促到逃跑的小偷。", wrong: "促", options: ["捉", "促"], limit: 60 },
-        { type: "typo", display: "火車暖暖地駛入車站，準備讓乘客下車。", wrong: "暖", options: ["緩", "暖"], limit: 60 },
-        { type: "typo", display: "清晨的湖面上漂浮著一層薄務，非常夢幻。", wrong: "務", options: ["霧", "務"], limit: 60 },
-        { type: "typo", display: "躺在這張新買的床上，感覺非常抒服。", wrong: "抒", options: ["舒", "抒"], limit: 60 },
-        { type: "typo", display: "我們站在山頂，遠挑遠方的高山。", wrong: "挑", options: ["眺", "挑"], limit: 60 },
-        { type: "typo", display: "溫暖的陽光穿秀了雲層，照亮了大地。", wrong: "秀", options: ["透", "秀"], limit: 60 },
-        { type: "typo", display: "為了解決這個問題，我今天已經跑了三堂辦公室了。", wrong: "堂", options: ["趟", "堂"], limit: 60 },
+        { type: "typo", display: "這座山風景秀麗，真是山明水季。", wrong: "季", options: ["秀", "季"], limit: 30 },
+        { type: "typo", display: "我們走在木踐道上欣賞美麗的湖景。", wrong: "踐", options: ["棧", "踐"], limit: 30 },
+        { type: "typo", display: "四月底去住日月潭大飯店，我們沿塗欣賞了美麗的風景。", wrong: "塗", options: ["途", "塗"], limit: 30 },
+        { type: "typo", display: "警察經過仔細調查，終於捕促到逃跑的小偷。", wrong: "促", options: ["捉", "促"], limit: 30 },
+        { type: "typo", display: "火車暖暖地駛入車站，準備讓乘客下車。", wrong: "暖", options: ["緩", "暖"], limit: 30 },
+        { type: "typo", display: "清晨的湖面上漂浮著一層薄務，非常夢幻。", wrong: "務", options: ["霧", "務"], limit: 30 },
+        { type: "typo", display: "躺在這張新買的床上，感覺非常抒服。", wrong: "抒", options: ["舒", "抒"], limit: 30 },
+        { type: "typo", display: "我們站在山頂，遠挑遠方的高山。", wrong: "挑", options: ["眺", "挑"], limit: 30 },
+        { type: "typo", display: "溫暖的陽光穿秀了雲層，照亮了大地。", wrong: "秀", options: ["透", "秀"], limit: 30 },
+        { type: "typo", display: "為了解決這個問題，我今天已經跑了三堂辦公室了。", wrong: "堂", options: ["趟", "堂"], limit: 30 },
         
-        // 語詞與成語選填
-        { type: "vocab", text: "即使是[____]，也需要好的材料才能做出美食。", options: ["巧婦難為無米之炊", "老馬識途"], correct: "巧婦難為無米之炊", limit: 30 },
-        { type: "vocab", text: "這件事情只是[____]，千萬不要隨便相信謠言。", options: ["捕風捉影", "盛情難卻"], correct: "捕風捉影", limit: 30 },
-        { type: "vocab", text: "騎腳踏車一開始可能會摔倒，但只要多練習，自然就能[____]。", options: ["熟能生巧", "似是而非"], correct: "熟能生巧", limit: 30 },
-        { type: "vocab", text: "我們趁著連續假期去[____]，好好放鬆心情。", options: ["遊山玩水", "跋山涉水"], correct: "遊山玩水", limit: 30 },
-        { type: "vocab", text: "這裡到處都是[____]，真是一個適合度假的好地方。", options: ["山明水秀", "苗而不秀"], correct: "山明水秀", limit: 30 },
+        { type: "vocab", text: "即使是[____]，也需要好的材料才能做出美食。", options: ["巧婦難為無米之炊", "老馬識途"], correct: "巧婦難為無米之炊", limit: 20 },
+        { type: "vocab", text: "這件事情只是[____]，千萬不要隨便相信謠言。", options: ["捕風捉影", "盛情難卻"], correct: "捕風捉影", limit: 20 },
+        { type: "vocab", text: "騎腳踏車一開始可能會摔倒，但只要多練習，自然就能[____]。", options: ["熟能生巧", "似是而非"], correct: "熟能生巧", limit: 20 },
+        { type: "vocab", text: "我們趁著連續假期去[____]，好好放鬆心情。", options: ["遊山玩水", "跋山涉水"], correct: "遊山玩水", limit: 20 },
+        { type: "vocab", text: "這裡到處都是[____]，真是一個適合度假的好地方。", options: ["山明水秀", "苗而不秀"], correct: "山明水秀", limit: 20 },
 
-        { type: "idiom", text: "這番話聽起來[____]，需要仔細思考才知道是對還是錯。", options: ["似是而非", "光陰似箭"], correct: "似是而非", limit: 60 },
-        { type: "idiom", text: "[____]，一轉眼這學期又要結束了。", options: ["光陰似箭", "霧裡看花"], correct: "光陰似箭", limit: 60 },
-        { type: "idiom", text: "別人的好意我們[____]，只好收下這份禮物。", options: ["盛情難卻", "整齊劃一"], correct: "盛情難卻", limit: 60 },
-        { type: "idiom", text: "在閱兵典禮上，軍人們的步伐[____]，非常壯觀。", options: ["整齊劃一", "緩步慢行"], correct: "整齊劃一", limit: 60 },
-        { type: "idiom", text: "遇到不懂的事情，可以請教[____]，他們經驗豐富能給你指引。", options: ["老馬識途", "後起之秀"], correct: "老馬識途", limit: 60 }
+        { type: "idiom", text: "這番話聽起來[____]，需要仔細思考才知道是對還是錯。", options: ["似是而非", "光陰似箭"], correct: "似是而非", limit: 30 },
+        { type: "idiom", text: "[____]，一轉眼這學期又要結束了。", options: ["光陰似箭", "霧裡看花"], correct: "光陰似箭", limit: 30 },
+        { type: "idiom", text: "別人的好意我們[____]，只好收下這份禮物。", options: ["盛情難卻", "整齊劃一"], correct: "盛情難卻", limit: 30 },
+        { type: "idiom", text: "在閱兵典禮上，軍人們的步伐[____]，非常壯觀。", options: ["整齊劃一", "緩步慢行"], correct: "整齊劃一", limit: 30 },
+        { type: "idiom", text: "遇到不懂的事情，可以請教[____]，他們經驗豐富能給你指引。", options: ["老馬識途", "後起之秀"], correct: "老馬識途", limit: 30 }
     ];
 
-    let currentIdx = 0;
-    let score = 0;
-    let timeLeft;
-    let timerInterval;
-    let wrongList = [];
+    let currentIdx = 0, score = 0, timeLeft, timerInterval, wrongList = [];
     const dashMax = 283; 
 
     const sentenceEl = document.getElementById('sentence-display');
@@ -233,9 +210,7 @@
     }
 
     function initQuestion() {
-        if (currentIdx >= lessonData.length) {
-            return endGame();
-        }
+        if (currentIdx >= lessonData.length) return endGame();
 
         const q = lessonData[currentIdx];
         progressEl.innerText = `題目：${currentIdx + 1} / ${lessonData.length}`;
@@ -262,25 +237,25 @@
     }
 
     function showOptions(event) {
+        if (event && event.target) event.target.classList.add('checked');
         const q = lessonData[currentIdx];
+        const correctAns = q.type === 'typo' ? q.options[0] : q.correct;
         
-        if (event && event.target) {
-            event.target.classList.add('checked');
+        // 正確的洗牌演算法 (Fisher-Yates)
+        let choices = [...q.options];
+        for (let i = choices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [choices[i], choices[j]] = [choices[j], choices[i]];
         }
 
         optionsEl.innerHTML = '';
-        const correctAns = q.type === 'typo' ? q.options[0] : q.correct;
-        
-        const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
-
-        shuffledOptions.forEach(opt => {
+        choices.forEach(opt => {
             const btn = document.createElement('div');
             btn.className = 'btn-option';
             btn.innerText = opt;
-            btn.onclick = () => handleAnswer(opt === correctAns, `你選了：${opt}`, correctAns);
+            btn.onclick = () => handleAnswer(opt === correctAns, opt, correctAns);
             optionsEl.appendChild(btn);
         });
-        
         optionsEl.style.display = 'grid'; 
     }
 
@@ -288,50 +263,41 @@
         timeLeft = limit;
         updateTimerUI(limit);
         clearInterval(timerInterval);
-        
         timerInterval = setInterval(() => {
             timeLeft--;
             updateTimerUI(limit);
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 const q = lessonData[currentIdx];
-                const correctAns = q.type === 'typo' ? q.options[0] : q.correct;
-                handleAnswer(false, "時間到！", correctAns);
+                handleAnswer(false, "超時", (q.type === 'typo' ? q.options[0] : q.correct));
             }
         }, 1000);
     }
 
     function updateTimerUI(limit) {
         timerTextEl.innerText = timeLeft;
-        const offset = (dashMax * timeLeft) / limit;
-        timerBarEl.style.strokeDasharray = `${offset} ${dashMax}`;
+        timerBarEl.style.strokeDasharray = `${(dashMax * timeLeft) / limit} ${dashMax}`;
     }
 
-    function handleAnswer(isCorrect, reason, correctAns) {
+    function handleAnswer(isCorrect, userChoice, correctAns) {
         clearInterval(timerInterval);
-        const q = lessonData[currentIdx];
-        const questionText = q.type === 'typo' ? q.display : q.text;
-
         if (isCorrect) {
             score += 5;
             playSound('correct');
             flashEffect('green');
         } else {
-            wrongList.push({ q: questionText, correct: correctAns, wrong: reason });
+            wrongList.push({ q: (lessonData[currentIdx].type === 'typo' ? lessonData[currentIdx].display : lessonData[currentIdx].text), correct: correctAns, user: userChoice });
             playSound('wrong');
             flashEffect('red');
         }
-        
         currentScoreEl.innerText = score;
         currentIdx++;
-        
-        setTimeout(initQuestion, 400);
+        setTimeout(initQuestion, 500);
     }
 
     function flashEffect(color) {
-        const body = document.body;
-        body.style.backgroundColor = color === 'green' ? 'var(--success)' : 'var(--error)';
-        setTimeout(() => { body.style.backgroundColor = 'var(--bg)'; }, 200);
+        document.body.style.backgroundColor = (color === 'green' ? 'var(--success)' : 'var(--error)');
+        setTimeout(() => { document.body.style.backgroundColor = 'var(--bg)'; }, 250);
     }
 
     function endGame() {
@@ -341,18 +307,17 @@
 
         const reviewDiv = document.getElementById('review-box');
         if (wrongList.length > 0) {
-            let html = '<h3 style="color: #16a085; margin-top:0;">🔍 錯題紅修單：</h3><div>';
+            let html = '<h3 style="color: #16a085; margin-top:0;">🔍 錯題紅修單：</h3>';
             wrongList.forEach((item, index) => {
                 html += `<div style="margin-bottom:15px; border-bottom: 2px dashed #a3e4d7; padding-bottom:10px;">
-                    <div style="font-weight:bold; font-size:1.1rem; color: #2c3e50;">${index + 1}. ${item.q}</div>
-                    <div style="color:var(--success); font-size:1rem; font-weight: bold; margin-top: 5px;">✅ 正確答案：${item.correct}</div>
-                    <div style="color:#7f8c8d; font-size:0.9rem;">(${item.wrong})</div>
+                    <div style="font-weight:bold; color: #2c3e50;">${index + 1}. ${item.q}</div>
+                    <div style="color:var(--success); font-weight: bold; margin-top: 5px;">✅ 正確答案：${item.correct}</div>
+                    <div style="color:#7f8c8d; font-size:0.9rem;">(你的選擇：${item.user})</div>
                 </div>`;
             });
-            html += '</div>';
             reviewDiv.innerHTML = html;
         } else {
-            reviewDiv.innerHTML = '<h3 style="color: var(--success); font-size: 1.5rem; text-align: center;">🌟 太強了！全部答對！滿分過關！</h3>';
+            reviewDiv.innerHTML = '<h3 style="color: var(--success); text-align: center;">🌟 山明水秀！全部答對了！</h3>';
         }
     }
 </script>
