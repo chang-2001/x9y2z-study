@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍄 成語百寶箱快問快答！</title>
+    <style>
+        :root {
+            --primary: #e52521; /* 瑪利歐紅 */
+            --secondary: #43b047; /* 路易吉綠 */
+            --bg: #5c94fc; /* 經典天空藍 */
+            --box-bg: #fbd324; /* 問號方塊黃 */
+            --home-btn: #747d8c;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            transition: background-color 0.2s;
+        }
+
+        #game-container {
+            background: var(--box-bg);
+            padding: 40px;
+            border-radius: 10px;
+            border: 4px solid #000;
+            box-shadow: inset -6px -6px 0px 0px rgba(220, 130, 0, 0.8), 10px 10px 0px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* 製作方塊的四個角落螺絲釘效果 */
+        .rivet {
+            width: 12px; height: 12px;
+            background: #d35400;
+            border: 2px solid #000;
+            border-radius: 50%;
+            position: absolute;
+        }
+        .r-tl { top: 15px; left: 15px; }
+        .r-tr { top: 15px; right: 15px; }
+        .r-bl { bottom: 15px; left: 15px; }
+        .r-br { bottom: 15px; right: 15px; }
+
+        /* 倒數圓圈動畫 */
+        .timer-svg {
+            width: 120px;
+            height: 120px;
+            transform: rotate(-90deg);
+        }
+
+        .timer-svg circle {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+        }
+
+        .timer-bg { stroke: rgba(0,0,0,0.1); }
+        .timer-bar {
+            stroke: var(--primary);
+            stroke-dasharray: 345;
+            transition: stroke-dasharray 1s linear;
+        }
+
+        .timer-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .timer-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #000;
+            text-shadow: 2px 2px 0px #fff;
+        }
+
+        #question {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #000;
+            min-height: 80px;
+            text-shadow: 1px 1px 0px #fff;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* 磚塊風格按鈕 */
+        .btn {
+            padding: 20px;
+            font-size: 1.3rem;
+            border: 3px solid #000;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #cc4e00; 
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 0px #000;
+            box-shadow: inset -4px -4px 0px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+        }
+
+        .btn:hover { background: #e65c00; transform: translateY(-2px); }
+        .btn:active { transform: translateY(2px); box-shadow: inset -2px -2px 0px rgba(0,0,0,0.3); }
+
+        .btn-start { background: var(--primary); font-size: 1.5rem; }
+        .btn-start:hover { background: #ff4757; }
+
+        .hidden { display: none !important; }
+
+        #review-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 10px;
+            margin: 20px 0;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .home-link { text-decoration: none; flex: 1; }
+        .btn-home { background: var(--home-btn); width: 100%; box-shadow: inset -4px -4px 0px rgba(0,0,0,0.2); }
+        .btn-home:hover { background: #57606f; }
+
+        @media (max-width: 500px) {
+            .options-grid { grid-template-columns: 1fr; }
+            #question { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- 方塊裝飾釘 -->
+    <div class="rivet r-tl"></div>
+    <div class="rivet r-tr"></div>
+    <div class="rivet r-bl"></div>
+    <div class="rivet r-br"></div>
+
+    <!-- 開始畫面 -->
+    <div id="start-screen">
+        <h1 style="color: #000; text-shadow: 2px 2px 0px #fff; font-size: 2.2rem;">🍄 成語百寶箱<br>挑戰！</h1>
+        <p style="font-weight:bold; font-size: 1.2rem;">敲開問號方塊，挑戰你的成語大腦！<br>總共 20 題，每題 20 秒鐘 ⏳</p>
+        <button class="btn btn-start" onclick="startGame()" style="width: 250px; margin-top: 20px;">🎮 開始挑戰</button>
+    </div>
+
+    <!-- 遊戲畫面 -->
+    <div id="quiz-screen" class="hidden">
+        <div class="timer-container">
+            <svg class="timer-svg">
+                <circle class="timer-bg" cx="60" cy="60" r="55"></circle>
+                <circle id="timer-bar" class="timer-bar" cx="60" cy="60" r="55"></circle>
+            </svg>
+            <div id="timer-text" class="timer-text">20</div>
+        </div>
+        <div id="question">載入中...</div>
+        <div class="options-grid" id="options"></div>
+    </div>
+
+    <!-- 結算畫面 -->
+    <div id="score-screen" class="hidden">
+        <h2 style="margin-top:0; text-shadow: 1px 1px 0px #fff;">🚩 挑戰結束！</h2>
+        <p id="final-score" style="font-size: 2.8rem; font-weight: bold; color: var(--primary); margin:10px 0; text-shadow: 2px 2px 0px #000;"></p>
+        
+        <div id="review-box"></div>
+
+        <div class="btn-container">
+            <button class="btn btn-start" onclick="location.reload()" style="flex:1;">🔄 再玩一次</button>
+            <a href="index.html" class="home-link">
+                <button class="btn btn-home">🏠 回到首頁</button>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+/* --- 音效引擎 (Web Audio API) --- */
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+
+function initAudio() {
+    if (!audioCtx) audioCtx = new AudioContext();
+}
+
+function playSound(type) {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+
+    if (type === 'correct') {
+        // 模擬金幣聲
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(987.77, now); // B5
+        osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.1); // E6
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    } else {
+        // 錯誤聲 (撞到蘑菇怪)
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150.00, now);
+        osc.frequency.exponentialRampToValueAtTime(80.00, now + 0.3);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.start(now);
+        osc.stop(now + 0.4);
+    }
+}
+
+/* --- 成語題庫 (14個重點成語 + 6個補充成語) --- */
+const quizData = [
+    // 課本重點 (!) 的 14 題
+    { q: "每家每戶都知道的事情？", a: ["家喻戶曉", "名噪一時"], correct: 0 },
+    { q: "懂了一個道理，就能推知其他同類的事情？", a: ["觸類旁通", "易如反掌"], correct: 0 },
+    { q: "遭受挫折就再也振作不起來？", a: ["一蹶不振", "半途而廢"], correct: 0 },
+    { q: "事情做起來非常容易，像翻手掌一樣？", a: ["熟能生巧", "易如反掌"], correct: 1 },
+    { q: "一開始就取得勝利，比喻事情一開始就成功？", a: ["出奇制勝", "旗開得勝"], correct: 1 },
+    { q: "情況越來越糟？", a: ["每況愈下", "苟延殘喘"], correct: 0 },
+    { q: "拿不定主意，遲遲無法做決定？", a: ["猶豫不決", "似是而非"], correct: 0 },
+    { q: "用傲慢的氣勢壓迫別人？", a: ["盛氣凌人", "怒髮衝冠"], correct: 0 },
+    { q: "比喻順利被挑選中？", a: ["雀屏中選", "後起之秀"], correct: 0 },
+    { q: "形容寫字筆力很深？", a: ["振筆疾書", "力透紙背"], correct: 1 },
+    { q: "隨便亂猜，聽信沒有實際根據的謠言？", a: ["捕風捉影", "似是而非"], correct: 0 },
+    { q: "到處遊覽美麗的山水風景？", a: ["跋山涉水", "遊山玩水"], correct: 1 },
+    { q: "形容風景非常優美？", a: ["山明水秀", "遊山玩水"], correct: 0 },
+    { q: "比喻有經驗的人對情況熟悉，能指引別人？", a: ["老馬識途", "吳牛喘月"], correct: 0 },
+
+    // 精選補充的 6 題
+    { q: "比喻強者欺凌、吞併弱者？", a: ["弱不禁風", "弱肉強食"], correct: 1 },
+    { q: "從失敗的劣勢中轉為勝利？", a: ["反敗為勝", "旗開得勝"], correct: 0 },
+    { q: "單獨一個人，得不到任何人的幫忙？", a: ["孤立無援", "自討苦吃"], correct: 0 },
+    { q: "比喻真心相待，對朋友非常講義氣？", a: ["肝膽相照", "臥薪嘗膽"], correct: 0 },
+    { q: "事情做一半就停下來，沒有完成？", a: ["半途而廢", "一氣呵成"], correct: 0 },
+    { q: "練習得很熟練，就能找出巧妙的方法？", a: ["巧婦難為", "熟能生巧"], correct: 1 }
+];
+
+let currentIdx = 0;
+let score = 0;
+let timeLeft = 20;
+let timer;
+let wrongList = []; 
+const dashMax = 345;
+
+// 打亂題庫順序
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function startGame() {
+    initAudio();
+    shuffleArray(quizData);
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('quiz-screen').classList.remove('hidden');
+    showQuestion();
+}
+
+function showQuestion() {
+    if (currentIdx >= quizData.length) return endGame();
+    const data = quizData[currentIdx];
+    document.getElementById('question').innerText = data.q;
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+    
+    // 讓選項左右順序也隨機
+    let options = [...data.a];
+    let correctStr = data.a[data.correct];
+    if (Math.random() > 0.5) { options.reverse(); }
+
+    options.forEach((opt) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.innerText = opt;
+        btn.onclick = () => handleAnswer(opt === correctStr, opt, correctStr);
+        optionsDiv.appendChild(btn);
+    });
+    startTimer();
+}
+
+function startTimer() {
+    timeLeft = 20;
+    updateTimerUI();
+    clearInterval(timer);
+    timer = setInterval(() => {
+        timeLeft--;
+        updateTimerUI();
+        if (timeLeft <= 0) handleAnswer(false, null, quizData[currentIdx].a[quizData[currentIdx].correct]);
+    }, 1000);
+}
+
+function updateTimerUI() {
+    document.getElementById('timer-text').innerText = timeLeft;
+    const offset = (dashMax * timeLeft) / 20;
+    document.getElementById('timer-bar').style.strokeDasharray = `${offset} ${dashMax}`;
+}
+
+function handleAnswer(isCorrect, chosenOpt, correctOpt) {
+    clearInterval(timer);
+    const data = quizData[currentIdx];
+    
+    if (isCorrect) {
+        score += 5; // 共20題，每題5分，滿分100分
+        playSound('correct');
+        flashEffect('green');
+    } else {
+        const reason = chosenOpt === null ? "時間到！" : `你選了：${chosenOpt}`;
+        wrongList.push({ q: data.q, correct: correctOpt, wrong: reason });
+        playSound('wrong');
+        flashEffect('red');
+    }
+    currentIdx++;
+    setTimeout(showQuestion, 400); 
+}
+
+function flashEffect(color) {
+    document.body.style.backgroundColor = color === 'green' ? '#43b047' : '#e52521';
+    setTimeout(() => { document.body.style.backgroundColor = 'var(--bg)'; }, 200);
+}
+
+function endGame() {
+    document.getElementById('quiz-screen').classList.add('hidden');
+    const scoreScreen = document.getElementById('score-screen');
+    scoreScreen.classList.remove('hidden');
+    document.getElementById('final-score').innerText = `🏆 總得分：${score} 分`;
+
+    const reviewDiv = document.getElementById('review-box');
+    if (wrongList.length > 0) {
+        let html = '<h3 style="color: #d35400; margin-top:0; border-bottom: 2px solid #ccc; padding-bottom: 5px;">📖 錯題紅修單：</h3><div>';
+        wrongList.forEach(item => {
+            html += `<div style="margin-bottom:12px; border-bottom: 1px dashed #ccc; padding-bottom:8px;">
+                <div style="font-weight:bold; font-size:1.1rem; color:#333;">${item.q}</div>
+                <div style="color:#27ae60; font-size:1rem; font-weight:bold;">✅ 正確答案：${item.correct}</div>
+                <div style="color:#e74c3c; font-size:0.9rem;">❌ ${item.wrong}</div>
+            </div>`;
+        });
+        html += '</div>';
+        reviewDiv.innerHTML = html;
+    } else {
+        reviewDiv.innerHTML = '<h3 style="color: #27ae60; text-align:center; font-size: 1.5rem;">🌟 滿分太神啦！百寶箱裡的成語都被你答對了！</h3>';
+    }
+}
+</script>
+</body>
+</html>
