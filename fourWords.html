@@ -161,6 +161,7 @@
 <!-- 隱藏的 YouTube 播放器容器 -->
 <div id="yt-player-correct" style="display: none;"></div>
 <div id="yt-player-wrong" style="display: none;"></div>
+<div id="yt-player-end" style="display: none;"></div>
 
 <div id="game-container">
     <div class="rivet r-tl"></div>
@@ -206,7 +207,6 @@
    音效雙引擎：YouTube API + Web Audio API 備援
 ========================================= */
 
-// --- 引擎 1：預設電子合成音效 (Fallback) ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 
@@ -231,7 +231,7 @@ function playSynthSound(type) {
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
         osc.start(now);
         osc.stop(now + 0.3);
-    } else {
+    } else if (type === 'wrong') {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(150.00, now);
         osc.frequency.exponentialRampToValueAtTime(80.00, now + 0.3);
@@ -242,17 +242,34 @@ function playSynthSound(type) {
     }
 }
 
+// 備用過關歡呼音效（類似升階和弦）
+function playWinSynthSound() {
+    initSynthAudio();
+    const now = audioCtx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, 高音C
+    notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + i * 0.1);
+        gain.gain.setValueAtTime(0.3, now + i * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.1);
+        osc.stop(now + i * 0.1 + 0.2);
+    });
+}
+
 // --- 引擎 2：YouTube IFrame API ---
-let playerCorrect, playerWrong;
+let playerCorrect, playerWrong, playerEnd;
 let ytReady = false;
 
-// 載入 YouTube API 腳本
 var tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 var firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-// API 準備好時觸發建立隱藏播放器
 function onYouTubeIframeAPIReady() {
     playerCorrect = new YT.Player('yt-player-correct', {
         height: '0', width: '0', 
@@ -266,34 +283,43 @@ function onYouTubeIframeAPIReady() {
         videoId: '9wYFy-z_s0U', // 答錯蘑菇音效
         playerVars: { 'autoplay': 0, 'controls': 0 }
     });
+
+    playerEnd = new YT.Player('yt-player-end', {
+        height: '0', width: '0', 
+        videoId: 'L2EhcPBuT4k', // 結算過關音效
+        playerVars: { 'autoplay': 0, 'controls': 0 }
+    });
 }
 
-// --- 整合播放控制器 ---
 function playSound(type) {
-    // 解除瀏覽器對音效的限制
     initSynthAudio(); 
-
     try {
         if (ytReady) {
-            // 嘗試用 YouTube 播放
             if (type === 'correct' && playerCorrect && playerCorrect.playVideo) {
                 playerCorrect.seekTo(0);
                 playerCorrect.playVideo();
-                return; // 成功就跳出，不執行備援音效
+                return; 
             } else if (type === 'wrong' && playerWrong && playerWrong.playVideo) {
                 playerWrong.seekTo(0);
                 playerWrong.playVideo();
-                return; // 成功就跳出
+                return; 
             }
         }
-    } catch(e) {
-        console.warn("YouTube 播放失敗，切換至備援音效", e);
-    }
-    
-    // 如果 YouTube 沒準備好，或是呼叫失敗，就播放電子備援音效
+    } catch(e) { console.warn("YouTube 播放失敗", e); }
     playSynthSound(type);
 }
 
+function playEndSound() {
+    initSynthAudio();
+    try {
+        if (ytReady && playerEnd && playerEnd.playVideo) {
+            playerEnd.seekTo(0);
+            playerEnd.playVideo();
+            return;
+        }
+    } catch(e) { console.warn("YouTube 結算音效播放失敗", e); }
+    playWinSynthSound();
+}
 
 /* =========================================
    成語題庫與遊戲邏輯
@@ -336,7 +362,7 @@ function shuffleArray(array) {
 }
 
 function startGame() {
-    initSynthAudio(); // 確保使用者點擊後，瀏覽器音訊解鎖
+    initSynthAudio();
     shuffleArray(quizData);
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.remove('hidden');
@@ -409,6 +435,9 @@ function endGame() {
     const scoreScreen = document.getElementById('score-screen');
     scoreScreen.classList.remove('hidden');
     document.getElementById('final-score').innerText = `🏆 總得分：${score} 分`;
+
+    // 播放 YouTube 結算過關音效
+    playEndSound();
 
     const reviewDiv = document.getElementById('review-box');
     if (wrongList.length > 0) {
