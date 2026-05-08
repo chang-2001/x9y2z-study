@@ -158,21 +158,22 @@
 </head>
 <body>
 
+<!-- 隱藏的 YouTube 播放器容器 -->
+<div id="yt-player-correct" style="display: none;"></div>
+<div id="yt-player-wrong" style="display: none;"></div>
+
 <div id="game-container">
-    <!-- 方塊裝飾釘 -->
     <div class="rivet r-tl"></div>
     <div class="rivet r-tr"></div>
     <div class="rivet r-bl"></div>
     <div class="rivet r-br"></div>
 
-    <!-- 開始畫面 -->
     <div id="start-screen">
         <h1 style="color: #000; text-shadow: 2px 2px 0px #fff; font-size: 2.2rem;">🍄 成語百寶箱<br>挑戰！</h1>
         <p style="font-weight:bold; font-size: 1.2rem;">敲開問號方塊，挑戰你的成語大腦！<br>總共 20 題，每題 20 秒鐘 ⏳</p>
         <button class="btn btn-start" onclick="startGame()" style="width: 250px; margin-top: 20px;">🎮 開始挑戰</button>
     </div>
 
-    <!-- 遊戲畫面 -->
     <div id="quiz-screen" class="hidden">
         <div class="timer-container">
             <svg class="timer-svg">
@@ -185,7 +186,6 @@
         <div class="options-grid" id="options"></div>
     </div>
 
-    <!-- 結算畫面 -->
     <div id="score-screen" class="hidden">
         <h2 style="margin-top:0; text-shadow: 1px 1px 0px #fff;">🚩 挑戰結束！</h2>
         <p id="final-score" style="font-size: 2.8rem; font-weight: bold; color: var(--primary); margin:10px 0; text-shadow: 2px 2px 0px #000;"></p>
@@ -202,18 +202,21 @@
 </div>
 
 <script>
-/* --- 音效引擎 (Web Audio API) --- */
+/* =========================================
+   音效雙引擎：YouTube API + Web Audio API 備援
+========================================= */
+
+// --- 引擎 1：預設電子合成音效 (Fallback) ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 
-function initAudio() {
+function initSynthAudio() {
     if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-function playSound(type) {
-    initAudio();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-
+function playSynthSound(type) {
+    initSynthAudio();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
@@ -221,16 +224,14 @@ function playSound(type) {
     const now = audioCtx.currentTime;
 
     if (type === 'correct') {
-        // 模擬金幣聲
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(987.77, now); // B5
-        osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.1); // E6
+        osc.frequency.setValueAtTime(987.77, now);
+        osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.1);
         gain.gain.setValueAtTime(0.3, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
         osc.start(now);
         osc.stop(now + 0.3);
     } else {
-        // 錯誤聲 (撞到蘑菇怪)
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(150.00, now);
         osc.frequency.exponentialRampToValueAtTime(80.00, now + 0.3);
@@ -241,9 +242,63 @@ function playSound(type) {
     }
 }
 
-/* --- 成語題庫 (14個重點成語 + 6個補充成語) --- */
+// --- 引擎 2：YouTube IFrame API ---
+let playerCorrect, playerWrong;
+let ytReady = false;
+
+// 載入 YouTube API 腳本
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+// API 準備好時觸發建立隱藏播放器
+function onYouTubeIframeAPIReady() {
+    playerCorrect = new YT.Player('yt-player-correct', {
+        height: '0', width: '0', 
+        videoId: '0QC5l_DIsg8', // 答對金幣音效
+        playerVars: { 'autoplay': 0, 'controls': 0 },
+        events: { 'onReady': () => { ytReady = true; } }
+    });
+    
+    playerWrong = new YT.Player('yt-player-wrong', {
+        height: '0', width: '0', 
+        videoId: '9wYFy-z_s0U', // 答錯蘑菇音效
+        playerVars: { 'autoplay': 0, 'controls': 0 }
+    });
+}
+
+// --- 整合播放控制器 ---
+function playSound(type) {
+    // 解除瀏覽器對音效的限制
+    initSynthAudio(); 
+
+    try {
+        if (ytReady) {
+            // 嘗試用 YouTube 播放
+            if (type === 'correct' && playerCorrect && playerCorrect.playVideo) {
+                playerCorrect.seekTo(0);
+                playerCorrect.playVideo();
+                return; // 成功就跳出，不執行備援音效
+            } else if (type === 'wrong' && playerWrong && playerWrong.playVideo) {
+                playerWrong.seekTo(0);
+                playerWrong.playVideo();
+                return; // 成功就跳出
+            }
+        }
+    } catch(e) {
+        console.warn("YouTube 播放失敗，切換至備援音效", e);
+    }
+    
+    // 如果 YouTube 沒準備好，或是呼叫失敗，就播放電子備援音效
+    playSynthSound(type);
+}
+
+
+/* =========================================
+   成語題庫與遊戲邏輯
+========================================= */
 const quizData = [
-    // 課本重點 (!) 的 14 題
     { q: "每家每戶都知道的事情？", a: ["家喻戶曉", "名噪一時"], correct: 0 },
     { q: "懂了一個道理，就能推知其他同類的事情？", a: ["觸類旁通", "易如反掌"], correct: 0 },
     { q: "遭受挫折就再也振作不起來？", a: ["一蹶不振", "半途而廢"], correct: 0 },
@@ -253,18 +308,16 @@ const quizData = [
     { q: "拿不定主意，遲遲無法做決定？", a: ["猶豫不決", "似是而非"], correct: 0 },
     { q: "用傲慢的氣勢壓迫別人？", a: ["盛氣凌人", "怒髮衝冠"], correct: 0 },
     { q: "比喻順利被挑選中？", a: ["雀屏中選", "後起之秀"], correct: 0 },
-    { q: "形容寫字筆力很深？", a: ["振筆疾書", "力透紙背"], correct: 1 },
+    { q: "形容寫字筆力很深，或文章寫得極好？", a: ["振筆疾書", "力透紙背"], correct: 1 },
     { q: "隨便亂猜，聽信沒有實際根據的謠言？", a: ["捕風捉影", "似是而非"], correct: 0 },
     { q: "到處遊覽美麗的山水風景？", a: ["跋山涉水", "遊山玩水"], correct: 1 },
-    { q: "形容風景非常優美？", a: ["山明水秀", "遊山玩水"], correct: 0 },
-    { q: "比喻有經驗的人對情況熟悉，能指引別人？", a: ["老馬識途", "吳牛喘月"], correct: 0 },
-
-    // 精選補充的 6 題
+    { q: "形容風景非常優美？", a: ["山明水秀", "青山綠水"], correct: 0 },
+    { q: "比喻有經驗的人對情況熟悉，能指引別人？", a: ["老馬識途", "熟能生巧"], correct: 0 },
     { q: "比喻強者欺凌、吞併弱者？", a: ["弱不禁風", "弱肉強食"], correct: 1 },
     { q: "從失敗的劣勢中轉為勝利？", a: ["反敗為勝", "旗開得勝"], correct: 0 },
     { q: "單獨一個人，得不到任何人的幫忙？", a: ["孤立無援", "自討苦吃"], correct: 0 },
-    { q: "比喻真心相待，對朋友非常講義氣？", a: ["肝膽相照", "臥薪嘗膽"], correct: 0 },
-    { q: "事情做一半就停下來，沒有完成？", a: ["半途而廢", "一氣呵成"], correct: 0 },
+    { q: "比喻真心相待，對朋友非常講義氣？", a: ["肝膽相照", "兩肋插刀"], correct: 0 },
+    { q: "事情做一半就停下來，沒有完成？", a: ["半途而廢", "一蹶不振"], correct: 0 },
     { q: "練習得很熟練，就能找出巧妙的方法？", a: ["巧婦難為", "熟能生巧"], correct: 1 }
 ];
 
@@ -275,7 +328,6 @@ let timer;
 let wrongList = []; 
 const dashMax = 345;
 
-// 打亂題庫順序
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -284,7 +336,7 @@ function shuffleArray(array) {
 }
 
 function startGame() {
-    initAudio();
+    initSynthAudio(); // 確保使用者點擊後，瀏覽器音訊解鎖
     shuffleArray(quizData);
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.remove('hidden');
@@ -298,7 +350,6 @@ function showQuestion() {
     const optionsDiv = document.getElementById('options');
     optionsDiv.innerHTML = '';
     
-    // 讓選項左右順序也隨機
     let options = [...data.a];
     let correctStr = data.a[data.correct];
     if (Math.random() > 0.5) { options.reverse(); }
@@ -335,7 +386,7 @@ function handleAnswer(isCorrect, chosenOpt, correctOpt) {
     const data = quizData[currentIdx];
     
     if (isCorrect) {
-        score += 5; // 共20題，每題5分，滿分100分
+        score += 5; 
         playSound('correct');
         flashEffect('green');
     } else {
