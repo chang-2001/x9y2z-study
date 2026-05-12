@@ -6,17 +6,27 @@
     <title>理財駕照：100CC大獎賽</title>
     <style>
         :root { --mario-red: #E52521; --mario-blue: #047AB2; --mario-yellow: #FFCB05; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: "Microsoft JhengHei", sans-serif; overflow: hidden; background: #000; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: "Microsoft JhengHei", sans-serif; overflow: hidden; background: #5c94fc; }
         
         #game-container { position: relative; width: 100vw; height: 100vh; background: linear-gradient(#5c94fc 70%, #94fbab 70%); }
 
-        /* 影片嵌入樣式 */
+        /* 關鍵：隱形影片載體 */
+        #video-hidden-box {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* 啟動封面 */
         #video-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.85); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: 0.5s;
         }
-        .video-container { position: relative; width: 80%; padding-bottom: 45%; /* 16:9 Aspect Ratio */ height: 0; }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 5px solid var(--mario-yellow); border-radius: 15px; }
+        #start-title { color: white; font-size: 36px; margin-bottom: 30px; text-shadow: 3px 3px 0 var(--mario-red); font-weight: bold; }
 
         /* 數據看板 */
         #dashboard { position: absolute; top: 20px; width: 90%; left: 5%; display: flex; justify-content: space-between; z-index: 10; opacity: 0; transition: 0.5s; }
@@ -29,7 +39,6 @@
             padding: 30px; text-align: center; box-shadow: 0 15px 0 rgba(0,0,0,0.2); z-index: 5; display: none;
         }
         
-        /* 選項按鈕物理回饋 */
         .option-btn {
             display: inline-block; width: 45%; margin: 10px; padding: 20px;
             background: var(--mario-blue); color: white; border-radius: 20px;
@@ -51,22 +60,29 @@
 <body>
 
 <div id="game-container">
-    <!-- 1. 開場影片疊加層 -->
-    <div id="video-overlay">
-        <div class="video-container">
-            <iframe id="intro-video" src="https://www.youtube.com/embed/M816Wz-5gUM?autoplay=1&mute=0&controls=0" allow="autoplay"></iframe>
-        </div>
-        <button class="option-btn" style="width: 300px; margin-top: 30px; background: #3d9a47; box-shadow: 0 8px 0 #2b6c33;" onclick="enterRace()">啟動引擎進入賽道！</button>
+    <!-- 隱形的 YouTube 播放器 -->
+    <div id="video-hidden-box">
+        <!-- 預設不播放，等點擊後再啟動 -->
+        <iframe id="bg-audio" 
+                width="1" height="1" 
+                src="https://www.youtube.com/embed/M816Wz-5gUM?enablejsapi=1&autoplay=0&loop=1&playlist=M816Wz-5gUM" 
+                frameborder="0" allow="autoplay"></iframe>
     </div>
 
-    <!-- 2. 遊戲主畫面 -->
+    <!-- 啟動封面：點擊這裡會觸發音效 -->
+    <div id="video-overlay">
+        <div id="start-title">🏁 100CC 理財大獎賽 🏁</div>
+        <button class="option-btn" style="width: 320px; background: #3d9a47; box-shadow: 0 8px 0 #2b6c33;" onclick="startEngine()">啟動引擎 (Start Engine)</button>
+    </div>
+
+    <!-- 遊戲看板 -->
     <div id="dashboard">
         <div class="stat-box">💰 金幣: <span id="coin-count">0</span></div>
         <div class="stat-box">🥚 茶葉蛋: <span id="egg-count">0</span></div>
     </div>
 
     <div id="quiz-box">
-        <div id="question-text" style="font-size: 28px; min-height: 80px;">載入題目中...</div>
+        <div id="question-text" style="font-size: 28px; min-height: 80px; line-height: 1.5;">載入中...</div>
         <div id="options-container"></div>
     </div>
 
@@ -76,7 +92,7 @@
 </div>
 
 <script>
-    // 您的核心題庫
+    // 您的題庫數據
     const questionBank = [
     // --- 【類別 1：腦力與時間的價值】  ---
     { q: "爸爸每天上班，這是付出什麼換金幣？", a: ["時間", "身體", "運氣", "力氣"], correct: 0, diff: 'easy' },
@@ -139,22 +155,26 @@
     
     // (其餘題目依照上述邏輯補足至 100 題...)
 ];
-
     let state = { coins: 0, combo: 0, qIdx: 0, quizSet: [], isLock: false };
 
-    // 關閉影片並開始遊戲
-    function enterRace() {
-        document.getElementById('video-overlay').style.display = 'none';
-        document.getElementById('dashboard').style.opacity = '1';
-        document.getElementById('quiz-box').style.display = 'block';
-        document.getElementById('mario-hero').style.display = 'block';
-        startGame();
+    function startEngine() {
+        // 1. 播放隱形的 YouTube 音樂 (透過重新載入帶 autoplay 的網址來繞過限制)
+        const audioIframe = document.getElementById('bg-audio');
+        audioIframe.src = "https://www.youtube.com/embed/M816Wz-5gUM?autoplay=1&loop=1&playlist=M816Wz-5gUM";
+
+        // 2. 切換介面
+        document.getElementById('video-overlay').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('video-overlay').style.display = 'none';
+            document.getElementById('dashboard').style.opacity = '1';
+            document.getElementById('quiz-box').style.display = 'block';
+            document.getElementById('mario-hero').style.display = 'block';
+            startGame();
+        }, 500);
     }
 
     function startGame() {
-        state.coins = 0;
-        state.combo = 0;
-        state.qIdx = 0;
+        state.coins = 0; state.combo = 0; state.qIdx = 0;
         state.quizSet = questionBank.sort(() => 0.5 - Math.random()).slice(0, 10);
         updateUI();
         renderQuestion();
@@ -163,7 +183,7 @@
     function renderQuestion() {
         const container = document.getElementById('options-container');
         const qText = document.getElementById('question-text');
-        if (state.qIdx >= 10) { finish(); return; }
+        if (state.qIdx >= 10 || state.qIdx >= state.quizSet.length) { finish(); return; }
 
         const data = state.quizSet[state.qIdx];
         qText.innerText = `[第 ${state.qIdx + 1} 題] ${data.q}`;
@@ -189,18 +209,15 @@
             state.coins += Math.floor(base * (state.combo >= 3 ? 1.5 : 1));
             pop(state.combo >= 3 ? 'effect-mushroom' : 'effect-coin');
         } else {
-            state.combo = 0;
-            state.coins -= 50;
+            state.combo = 0; state.coins -= 50;
             mario.style.transform = 'translateX(-50%) rotate(360deg)';
             setTimeout(() => mario.style.transform = 'translateX(-50%)', 500);
         }
 
         updateUI();
         setTimeout(() => {
-            state.qIdx++;
-            state.isLock = false;
-            renderQuestion();
-        }, 1000);
+            state.qIdx++; state.isLock = false; renderQuestion();
+        }, 1100);
     }
 
     function pop(id) {
