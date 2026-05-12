@@ -158,11 +158,6 @@
 </head>
 <body>
 
-<!-- 隱藏的 YouTube 播放器容器 -->
-<div id="yt-player-correct" style="display: none;"></div>
-<div id="yt-player-wrong" style="display: none;"></div>
-<div id="yt-player-end" style="display: none;"></div>
-
 <div id="game-container">
     <div class="rivet r-tl"></div>
     <div class="rivet r-tr"></div>
@@ -204,9 +199,15 @@
 
 <script>
 /* =========================================
-   音效雙引擎：YouTube API + Web Audio API 備援
+   音效雙引擎：本地 mp3 + Web Audio API 備援
 ========================================= */
 
+// --- 讀取本地音效檔案 ---
+const audioCorrect = new Audio('sounds/mariogrow.mp3');
+const audioWrong = new Audio('sounds/mariodead.mp3');
+const audioEnd = new Audio('sounds/marioclear.mp3');
+
+// --- 備用電子合成音效 (萬一 mp3 讀不到時自動啟動) ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 
@@ -242,11 +243,10 @@ function playSynthSound(type) {
     }
 }
 
-// 備用過關歡呼音效（類似升階和弦）
 function playWinSynthSound() {
     initSynthAudio();
     const now = audioCtx.currentTime;
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, 高音C
+    const notes = [523.25, 659.25, 783.99, 1046.50]; 
     notes.forEach((freq, i) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -261,69 +261,36 @@ function playWinSynthSound() {
     });
 }
 
-// --- 引擎 2：YouTube IFrame API ---
-let playerCorrect, playerWrong, playerEnd;
-let ytReady = false;
-
-var tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-var firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-function onYouTubeIframeAPIReady() {
-    playerCorrect = new YT.Player('yt-player-correct', {
-        height: '0', width: '0', 
-        videoId: '0QC5l_DIsg8', // 答對金幣音效
-        playerVars: { 'autoplay': 0, 'controls': 0 },
-        events: { 'onReady': () => { ytReady = true; } }
-    });
-    
-    playerWrong = new YT.Player('yt-player-wrong', {
-        height: '0', width: '0', 
-        videoId: '9wYFy-z_s0U', // 答錯蘑菇音效
-        playerVars: { 'autoplay': 0, 'controls': 0 }
-    });
-
-    playerEnd = new YT.Player('yt-player-end', {
-        height: '0', width: '0', 
-        videoId: 'L2EhcPBuT4k', // 結算過關音效
-        playerVars: { 'autoplay': 0, 'controls': 0 }
-    });
-}
-
+// --- 整合播放控制器 ---
 function playSound(type) {
-    initSynthAudio(); 
+    initSynthAudio(); // 解鎖音效限制
     try {
-        if (ytReady) {
-            if (type === 'correct' && playerCorrect && playerCorrect.playVideo) {
-                playerCorrect.seekTo(0);
-                playerCorrect.playVideo();
-                return; 
-            } else if (type === 'wrong' && playerWrong && playerWrong.playVideo) {
-                playerWrong.seekTo(0);
-                playerWrong.playVideo();
-                return; 
-            }
+        if (type === 'correct') {
+            audioCorrect.currentTime = 0;
+            audioCorrect.play().catch(() => playSynthSound('correct'));
+        } else if (type === 'wrong') {
+            audioWrong.currentTime = 0;
+            audioWrong.play().catch(() => playSynthSound('wrong'));
         }
-    } catch(e) { console.warn("YouTube 播放失敗", e); }
-    playSynthSound(type);
+    } catch(e) { 
+        playSynthSound(type); 
+    }
 }
 
 function playEndSound() {
     initSynthAudio();
     try {
-        if (ytReady && playerEnd && playerEnd.playVideo) {
-            playerEnd.seekTo(0);
-            playerEnd.playVideo();
-            return;
-        }
-    } catch(e) { console.warn("YouTube 結算音效播放失敗", e); }
-    playWinSynthSound();
+        audioEnd.currentTime = 0;
+        audioEnd.play().catch(() => playWinSynthSound());
+    } catch(e) { 
+        playWinSynthSound(); 
+    }
 }
 
-/* --- 成語題庫 (14個重點成語 + 6個補充成語) --- */
+/* =========================================
+   成語題庫與遊戲邏輯
+========================================= */
 const quizData = [
-    // 課本重點 (!) 的 14 題
     { q: "每家每戶都知道的事情？", a: ["家喻戶曉", "名噪一時"], correct: 0 },
     { q: "懂了一個道理，就能推知其他同類的事情？", a: ["觸類旁通", "易如反掌"], correct: 0 },
     { q: "遭受挫折就再也振作不起來？", a: ["一蹶不振", "半途而廢"], correct: 0 },
@@ -338,8 +305,6 @@ const quizData = [
     { q: "到處遊覽美麗的山水風景？", a: ["跋山涉水", "遊山玩水"], correct: 1 },
     { q: "形容風景非常優美？", a: ["山明水秀", "遊山玩水"], correct: 0 },
     { q: "比喻有經驗的人對情況熟悉，能指引別人？", a: ["老馬識途", "吳牛喘月"], correct: 0 },
-
-    // 精選補充的 6 題
     { q: "比喻強者欺凌、吞併弱者？", a: ["弱不禁風", "弱肉強食"], correct: 1 },
     { q: "從失敗的劣勢中轉為勝利？", a: ["反敗為勝", "旗開得勝"], correct: 0 },
     { q: "單獨一個人，得不到任何人的幫忙？", a: ["孤立無援", "自討苦吃"], correct: 0 },
@@ -364,6 +329,11 @@ function shuffleArray(array) {
 
 function startGame() {
     initSynthAudio();
+    // 預載入音效以防延遲
+    audioCorrect.load();
+    audioWrong.load();
+    audioEnd.load();
+    
     shuffleArray(quizData);
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.remove('hidden');
@@ -437,7 +407,7 @@ function endGame() {
     scoreScreen.classList.remove('hidden');
     document.getElementById('final-score').innerText = `🏆 總得分：${score} 分`;
 
-    // 播放 YouTube 結算過關音效
+    // 播放本地 mp3 過關音效
     playEndSound();
 
     const reviewDiv = document.getElementById('review-box');
