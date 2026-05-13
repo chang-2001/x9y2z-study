@@ -127,7 +127,15 @@
         .btn-start:hover { background: #ff4757; }
 
         .hidden { display: none !important; }
+/* 👇 新增這一段，限制結算畫面的高度並啟用 Flexbox */
+        #score-screen {
+            display: flex;
+            flex-direction: column;
+            flex: 1; 
+            overflow: hidden;
+        }
 
+        /* 原本的 review-box 保持這樣就可以了 */
         #review-box {
             flex-grow: 1;
             overflow-y: auto;
@@ -138,7 +146,6 @@
             padding: 15px;
             text-align: left;
         }
-
         .btn-container {
             display: flex;
             gap: 15px;
