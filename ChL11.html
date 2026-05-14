@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第十一課：最後一片葉子 - 挑戰賽</title>
+    <style>
+        :root {
+            --primary: #e67e22; /* 配合秋天落葉的橘色調 */
+            --secondary: #2c3e50;
+            --bg: #fdf7f2;
+            --success: #2ed573;
+            --error: #ff4757;
+            --home-btn: #95a5a6;
+        }
+
+        body { 
+            font-family: "Microsoft JhengHei", sans-serif; 
+            background-color: var(--bg); 
+            text-align: center; 
+            margin: 0; 
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.2s;
+        }
+
+        #game-container { 
+            width: 90%;
+            max-width: 850px; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        #progress { font-size: 18px; color: #7f8c8d; font-weight: bold; }
+
+        .timer-svg { width: 100px; height: 100px; transform: rotate(-90deg); }
+        .timer-svg circle { fill: none; stroke-width: 8; stroke-linecap: round; }
+        .timer-bg { stroke: #dfe4ea; }
+        .timer-bar {
+            stroke: #e74c3c;
+            stroke-dasharray: 345;
+            transition: stroke-dasharray 1s linear;
+        }
+        .timer-container { position: relative; display: inline-block; margin: 10px 0; }
+        .timer-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 2rem; font-weight: bold; color: var(--secondary);
+        }
+
+        .sentence { font-size: 32px; line-height: 1.8; margin: 20px 0 30px 0; min-height: 100px; padding: 0 20px; color: var(--secondary); word-break: break-all; }
+        .wrong-char { cursor: pointer; border-bottom: 3px dashed var(--primary); color: var(--primary); transition: 0.2s; font-weight: bold; }
+        .wrong-char:hover { background-color: #fcece0; border-radius: 5px; }
+
+        #options-area { display: none; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-option {
+            display: inline-block; font-size: 28px; font-weight: bold; padding: 15px 20px;
+            border: 4px solid black; background: white; cursor: pointer; border-radius: 12px; transition: 0.2s;
+        }
+        .btn-option:hover { background: #fdf7f2; transform: translateY(-2px); }
+
+        .btn { padding: 15px 30px; font-size: 1.5rem; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; transition: all 0.2s; color: white; }
+        .btn-start { background: var(--primary); width: 250px; margin-top: 20px; }
+        .btn-start:hover { transform: scale(1.05); background: #d35400; }
+
+        #score-screen { flex-grow: 1; display: flex; flex-direction: column; }
+        .score-display { font-size: 40px; font-weight: bold; color: #e67e22; margin: 10px 0; }
+        #review-box { flex-grow: 1; overflow-y: auto; background: #fff5f5; border-radius: 15px; margin: 20px 0; padding: 20px; border: 1px solid #ffdec9; text-align: left; max-height: 400px; }
+        
+        .btn-container { display: flex; gap: 15px; justify-content: center; margin-top: 10px; }
+        .btn-retry { background: var(--primary); flex: 1; }
+        .btn-home { background: var(--home-btn); flex: 1; text-decoration: none; display: flex; justify-content: center; align-items: center; color: white;}
+        .btn-retry:hover { background: #d35400; }
+        .btn-home:hover { background: #7f8c8d; }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 600px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .sentence { font-size: 26px; }
+            .btn-option { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="start-screen">
+        <h1 style="color: var(--primary); font-size: 2.5rem;">🍂 第十一課：最後一片葉子</h1>
+        <p style="font-size: 1.2rem; color: #555;">共 20 題挑戰，每題 5 分。<br>注意易混淆字，勇敢迎接挑戰吧！</p>
+        <button class="btn btn-start" onclick="startGame()">開始挑戰</button>
+    </div>
+
+    <div id="quiz-ui" class="hidden">
+        <div class="info-bar">
+            <div id="progress">題目：1 / 20</div>
+            <div style="font-weight: bold; color: #f39c12; font-size: 18px;">得分：<span id="current-score">0</span></div>
+        </div>
+        
+        <div class="timer-container">
+            <svg class="timer-svg">
+                <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                <circle id="timer-bar" class="timer-bar" cx="50" cy="50" r="45"></circle>
+            </svg>
+            <div id="timer-text" class="timer-text">--</div>
+        </div>
+
+        <div id="sentence-display" class="sentence">載入中...</div>
+        <div id="options-area" class="options-grid"></div>
+    </div>
+
+    <div id="score-screen" class="hidden">
+        <h2 style="margin-top:0; color: var(--secondary); font-size: 2rem;">挑戰結束！</h2>
+        <div class="score-display">最終得分：<span id="final-score">0</span></div>
+        
+        <div id="review-box"></div>
+
+        <div class="btn-container">
+            <button class="btn btn-retry" onclick="location.reload()">🔄 重新挑戰</button>
+            <a href="index.html" class="btn btn-home">🏠 回到首頁</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'correct') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.exponentialRampToValueAtTime(880.00, now + 0.15);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(220.00, now);
+            osc.frequency.exponentialRampToValueAtTime(146.83, now + 0.2);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            osc.start(now);
+            osc.stop(now + 0.5);
+        }
+    }
+
+    const lessonData = [
+        // 改錯字 (60秒)
+        { type: "typo", display: "牆上爬滿了常春滕，看起來生機盎然。", wrong: "滕", options: ["藤", "滕"], limit: 60 },
+        { type: "typo", display: "這件衣服的材質很輕簿，適合夏天穿。", wrong: "簿", options: ["薄", "簿"], limit: 60 },
+        { type: "typo", display: "他生了一場大病，身體變得非常叟弱。", wrong: "叟", options: ["瘦", "叟"], limit: 60 },
+        { type: "typo", display: "身體不舒服要盡快去醫院就衣，不能拖延。", wrong: "衣", options: ["醫", "衣"], limit: 60 },
+        { type: "typo", display: "工人們正在用紅專砌成一道堅固的牆。", wrong: "專", options: ["磚", "專"], limit: 60 },
+        { type: "typo", display: "哥哥幫忙般著沉重的家具搬上樓。", wrong: "般", options: ["搬", "般"], limit: 60 },
+        { type: "typo", display: "弟弟感冒了，一直刻嗽不停。", wrong: "刻", options: ["咳", "刻"], limit: 60 },
+        { type: "typo", display: "請小心走下階弟，注意安全。", wrong: "弟", options: ["梯", "弟"], limit: 60 },
+        { type: "typo", display: "遇到桅急的情況，一定要保持冷靜。", wrong: "桅", options: ["危", "桅"], limit: 60 },
+        { type: "typo", display: "他的病情非常炎重，需要馬上治療。", wrong: "炎", options: ["嚴", "炎"], limit: 60 },
+
+        // 選詞彙 (30秒)
+        { type: "vocab", text: "為了節省開銷，我們決定一起[____]這間房子。", options: ["合租", "出租"], correct: "合租", limit: 30 },
+        { type: "vocab", text: "他因為嚴重的[____]住院治療了好幾天。", options: ["肺炎", "發炎"], correct: "肺炎", limit: 30 },
+        { type: "vocab", text: "利用假日去打工，可以[____]一些零用錢。", options: ["賺取", "賠錢"], correct: "賺取", limit: 30 },
+        { type: "vocab", text: "醫生仔細為病人看診，是一位好[____]。", options: ["醫生", "醫藥費"], correct: "醫生", limit: 30 },
+        { type: "vocab", text: "夏天喝一杯冰涼的[____]水，感覺非常清爽。", options: ["薄荷", "微薄"], correct: "薄荷", limit: 30 },
+
+        // 選成語 (60秒)
+        { type: "idiom", text: "他不斷充實自己，早已不是當年那個[____]了。", options: ["吳下阿蒙", "趨炎附勢"], correct: "吳下阿蒙", limit: 60 },
+        { type: "idiom", text: "經過長期的飢餓，這隻流浪貓已經[____]，讓人心疼。", options: ["骨瘦如柴", "環肥燕瘦"], correct: "骨瘦如柴", limit: 60 },
+        { type: "idiom", text: "他總是結交有錢有勢的人，真是個[____]的傢伙。", options: ["趨炎附勢", "妄自菲薄"], correct: "趨炎附勢", limit: 60 },
+        { type: "idiom", text: "我們應該要有[____]的意識，平時就做好防災準備。", options: ["居安思危", "危言聳聽"], correct: "居安思危", limit: 60 },
+        { type: "idiom", text: "老師[____]地指出了他的錯誤，希望他能改過自新。", options: ["義正辭嚴", "厚此薄彼"], correct: "義正辭嚴", limit: 60 }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+    let timeLeft;
+    let timerInterval;
+    let wrongList = [];
+    const dashMax = 283;
+
+    const sentenceEl = document.getElementById('sentence-display');
+    const optionsEl = document.getElementById('options-area');
+    const timerTextEl = document.getElementById('timer-text');
+    const timerBarEl = document.getElementById('timer-bar');
+    const progressEl = document.getElementById('progress');
+    const currentScoreEl = document.getElementById('current-score');
+
+    function startGame() {
+        initAudio();
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-ui').classList.remove('hidden');
+        initQuestion();
+    }
+
+    function initQuestion() {
+        if (currentIdx >= lessonData.length) {
+            return endGame();
+        }
+
+        const q = lessonData[currentIdx];
+        progressEl.innerText = `題目：${currentIdx + 1} / ${lessonData.length}`;
+        currentScoreEl.innerText = score;
+        optionsEl.style.display = 'none';
+        optionsEl.innerHTML = '';
+        
+        startTimer(q.limit);
+
+        if (q.type === 'typo') {
+            let htmlText = "";
+            for (let char of q.display) {
+                if (char === q.wrong) {
+                    htmlText += `<span class="wrong-char" onclick="showOptions()">${char}</span>`;
+                } else {
+                    htmlText += `<span>${char}</span>`;
+                }
+            }
+            sentenceEl.innerHTML = htmlText;
+        } else {
+            sentenceEl.innerText = q.text;
+            showOptions();
+        }
+    }
+
+    function showOptions() {
+        const q = lessonData[currentIdx];
+        optionsEl.innerHTML = '';
+        const correctAns = q.type === 'typo' ? q.options[0] : q.correct;
+        
+        const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+
+        shuffledOptions.forEach(opt => {
+            const btn = document.createElement('div');
+            btn.className = 'btn-option';
+            btn.innerText = opt;
+            btn.onclick = () => handleAnswer(opt === correctAns, `你選了：${opt}`, correctAns);
+            optionsEl.appendChild(btn);
+        });
+        
+        optionsEl.style.display = 'grid';
+    }
+
+    function startTimer(limit) {
+        timeLeft = limit;
+        updateTimerUI(limit);
+        clearInterval(timerInterval);
+        
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerUI(limit);
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                const q = lessonData[currentIdx];
+                const correctAns = q.type === 'typo' ? q.options[0] : q.correct;
+                handleAnswer(false, "時間到！", correctAns);
+            }
+        }, 1000);
+    }
+
+    function updateTimerUI(limit) {
+        timerTextEl.innerText = timeLeft;
+        const offset = (dashMax * timeLeft) / limit;
+        timerBarEl.style.strokeDasharray = `${offset} ${dashMax}`;
+    }
+
+    function handleAnswer(isCorrect, reason, correctAns) {
+        clearInterval(timerInterval);
+        const q = lessonData[currentIdx];
+        const questionText = q.type === 'typo' ? q.display : q.text;
+
+        if (isCorrect) {
+            score += 5;
+            playSound('correct');
+            flashEffect('green');
+        } else {
+            wrongList.push({ q: questionText, correct: correctAns, wrong: reason });
+            playSound('wrong');
+            flashEffect('red');
+        }
+        
+        currentScoreEl.innerText = score;
+        currentIdx++;
+        
+        setTimeout(initQuestion, 400);
+    }
+
+    function flashEffect(color) {
+        const body = document.body;
+        body.style.backgroundColor = color === 'green' ? 'var(--success)' : 'var(--error)';
+        setTimeout(() => { body.style.backgroundColor = 'var(--bg)'; }, 200);
+    }
+
+    function endGame() {
+        document.getElementById('quiz-ui').classList.add('hidden');
+        document.getElementById('score-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = score;
+
+        const reviewDiv = document.getElementById('review-box');
+        if (wrongList.length > 0) {
+            let html = '<h3 style="color: #d35400; margin-top:0;">🔍 錯題紅修單：</h3><div>';
+            wrongList.forEach((item, index) => {
+                html += `<div style="margin-bottom:15px; border-bottom: 2px dashed #ffdec9; padding-bottom:10px;">
+                    <div style="font-weight:bold; font-size:1.1rem; color: #2c3e50;">${index + 1}. ${item.q}</div>
+                    <div style="color:var(--success); font-size:1rem; font-weight: bold; margin-top: 5px;">✅ 正確答案：${item.correct}</div>
+                    <div style="color:#7f8c8d; font-size:0.9rem;">(${item.wrong})</div>
+                </div>`;
+            });
+            html += '</div>';
+            reviewDiv.innerHTML = html;
+        } else {
+            reviewDiv.innerHTML = '<h3 style="color: var(--success); font-size: 1.5rem; text-align: center;">🌟 太強了！全部答對！滿分過關！</h3>';
+        }
+    }
+</script>
+
+</body>
+</html>
