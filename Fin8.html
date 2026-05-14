@@ -7,168 +7,106 @@
     <style>
         :root { --mario-red: #E52521; --mario-blue: #047AB2; --mario-yellow: #FFCB05; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: "Microsoft JhengHei", sans-serif; overflow: hidden; background: #5c94fc; }
-        
         #game-container { position: relative; width: 100vw; height: 100vh; background: linear-gradient(#5c94fc 70%, #94fbab 70%); }
 
-        /* 關鍵：隱形影片載體 */
-        #video-hidden-box {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
-            pointer-events: none;
-            z-index: -1;
-        }
+        /* 讓 YouTube 容器完全消失但存在 */
+        #player { position: absolute; width: 1px; height: 1px; opacity: 0; }
 
-        /* 啟動封面 */
         #video-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: 0.5s;
         }
-        #start-title { color: white; font-size: 36px; margin-bottom: 30px; text-shadow: 3px 3px 0 var(--mario-red); font-weight: bold; }
+        #start-title { color: white; font-size: 28px; margin-bottom: 30px; text-shadow: 3px 3px 0 var(--mario-red); text-align: center; padding: 0 20px; }
 
-        /* 數據看板 */
-        #dashboard { position: absolute; top: 20px; width: 90%; left: 5%; display: flex; justify-content: space-between; z-index: 10; opacity: 0; transition: 0.5s; }
-        .stat-box { background: rgba(0,0,0,0.8); color: white; padding: 10px 25px; border-radius: 50px; border: 3px solid white; font-size: 24px; font-weight: bold; }
+        #dashboard { position: absolute; top: 20px; width: 90%; left: 5%; display: flex; justify-content: space-between; z-index: 10; display:none; }
+        .stat-box { background: rgba(0,0,0,0.8); color: white; padding: 8px 15px; border-radius: 50px; border: 2px solid white; font-size: 18px; }
 
-        /* 題目框 */
         #quiz-box { 
             position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
-            width: 85%; max-width: 800px; background: white; border-radius: 40px; border: 8px solid var(--mario-red);
-            padding: 30px; text-align: center; box-shadow: 0 15px 0 rgba(0,0,0,0.2); z-index: 5; display: none;
+            width: 85%; max-width: 600px; background: white; border-radius: 30px; border: 6px solid var(--mario-red);
+            padding: 20px; text-align: center; box-shadow: 0 10px 0 rgba(0,0,0,0.2); z-index: 5; display: none;
         }
         
         .option-btn {
-            display: inline-block; width: 45%; margin: 10px; padding: 20px;
-            background: var(--mario-blue); color: white; border-radius: 20px;
-            font-size: 22px; border: none; cursor: pointer; transition: 0.1s;
-            box-shadow: 0 8px 0 #035a84;
+            display: inline-block; width: 90%; margin: 8px 0; padding: 15px;
+            background: var(--mario-blue); color: white; border-radius: 15px;
+            font-size: 18px; border: none; cursor: pointer; box-shadow: 0 5px 0 #035a84;
         }
-        .option-btn:active { transform: scale(0.95) translateY(5px); box-shadow: 0 2px 0 #035a84; }
 
         #mario-hero {
             position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            width: 280px; z-index: 2; transition: 0.5s; display: none;
+            width: 150px; z-index: 2; display: none;
         }
 
-        .effect-img { position: absolute; pointer-events: none; z-index: 20; opacity: 0; width: 80px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .anim-pop { animation: popAndFade 0.8s ease-out forwards; }
-        @keyframes popAndFade { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); } 100% { opacity: 0; margin-top: -150px; } }
+        /* 防止找不到圖片時顯示破圖圖示 */
+        img { alt: ""; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="video-hidden-box">
-        <iframe id="bg-audio" 
-                width="1" height="1" 
-                src="https://www.youtube.com/embed/M816Wz-5gUM?enablejsapi=1&autoplay=0&loop=1&playlist=M816Wz-5gUM" 
-                frameborder="0" allow="autoplay"></iframe>
-    </div>
+    <!-- YouTube API 會把播放器放在這裡 -->
+    <div id="player"></div>
 
     <div id="video-overlay">
-        <div id="start-title">🏁 100CC 理財拉力賽 (全題挑戰) 🏁</div>
-        <button class="option-btn" style="width: 320px; background: #3d9a47; box-shadow: 0 8px 0 #2b6c33;" onclick="startEngine()">啟動引擎 (Start Engine)</button>
+        <div id="start-title">🏁 100CC 理財拉力賽 🏁<br>(iPad/iPhone 修正版)</div>
+        <button class="option-btn" id="start-btn" style="width: 250px; background: #3d9a47; box-shadow: 0 8px 0 #2b6c33;">載入引擎中...</button>
     </div>
 
     <div id="dashboard">
         <div class="stat-box">💰 金幣: <span id="coin-count">0</span></div>
-        <div class="stat-box">🥚 茶葉蛋: <span id="egg-count">0</span></div>
+        <div class="stat-box">🥚 蛋: <span id="egg-count">0</span></div>
     </div>
 
     <div id="quiz-box">
-        <div id="question-text" style="font-size: 28px; min-height: 80px; line-height: 1.5;">載入中...</div>
+        <div id="question-text" style="font-size: 22px; margin-bottom: 15px;">準備中...</div>
         <div id="options-container"></div>
     </div>
 
-    <img src="images/mushroom.png" id="effect-mushroom" class="effect-img">
-    <img src="images/coin.png" id="effect-coin" class="effect-img">
-    <img src="images/mario_kart.png" id="mario-hero">
+    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png" id="mario-hero">
 </div>
 
+<!-- 載入 YouTube API 腳本 -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
 <script>
-    // 統一修正資料結構後的題庫數據
+    let player;
+    let isApiReady = false;
+
     const questionBank = [
-        // --- 【類別 1：腦力與時間的價值】 ---
-        { q: "爸爸每天上班，這是付出什麼換錢？", a: ["時間", "身體", "運氣", "魔法"], c: 0, diff: 'easy' },
-        { q: "想要未來每小時賺到的金幣變多，現在該提升什麼？", a: ["打電動", "玩小白", "腦袋裝的知識", "身高"], c: 2, diff: 'easy' },
-        { q: "為什麼我們要學習理財？", a: ["為了變魔術", "為了父母", "為了唸書", "為了未來可能多一點的選擇"], c: 3, diff: 'hard' },
-        { q: "當你睡覺時，還能幫你賺錢的工具，這叫什麼？", a: ["神蹟", "魔法", "被動收入", "詐騙"], c: 2, diff: 'hard' },
-        { q: "『時間換金幣』跟『錢滾錢』哪個更輕鬆？", a: ["時間換錢", "錢滾錢", "都一樣", "都很難"], c: 1, diff: 'mid' },
-
-        // --- --- 【類別 2：商品定價,銀行,信用卡,存款利息,放款利率】 ---
-        { q: "一個店內販售的商品如蛋糕，定價不用考慮的是什麼？", a: ["成本", "在消費者心中的價值", "在老闆心中的價值", "店面租金"], c: 2, diff: 'hard' },
-        { q: "販售商品的成本是什麼意思，例如蛋糕，以下哪個不是製作蛋糕的成本？", a: ["糖的＄", "蛋的＄", "請蛋糕師傅做的薪水", "售價"], c: 3, diff: 'hard' },
-        { q: "銀行的業務不包含下列哪一項？", a: ["貸款（借錢）", "存款（存錢）", "賣盤子", "匯款"], c: 2, diff: 'easy' },
-        { q: "有關信用卡的敘述哪個是錯的？", a: ["刷卡買東西下個月要還錢", "每次繳卡費的時候繳最低金額就可以了", "刷卡其實是在借下個月的錢來還", "使用信用卡有不用帶太多現金的優點"], c: 1, diff: 'hard' },
-        { q: "跟爸爸銀行借 1000 元，月利息 10%。第一個月不還變 1100 元，第二個月變多少？", a: ["1100 元", "1210 元", "1500 元", "1000 元"], c: 1, diff: 'hard' },
-        { 
-            q: "跟爸爸銀行借 1000 元，月利息 10%。第一個月不還變 1100 元，第二個月變1210元，如果到了『第三個月』還是賴皮不還錢，總共要還多少錢？", 
-            a: ["1300 元", "1331 元", "1100 元", "1210 元"], 
-            c: 1, 
-            diff: 'hard' 
-        },
-        { q: "什麼叫『利滾利』？", a: ["錢越來越少", "利息也會生利息", "錢變不見", "小白打滾"], c: 1, diff: 'mid' },
-        { q: "存錢時的利率是什麼意思？", a: ["讓錢變多的加速蘑菇", "大炸彈", "香蕉皮", "星星"], c: 0, diff: 'mid' },
-        { q: "我想買的玩具有200元，但是不夠錢，我跟媽媽一個月繳50元，分4個月繳完叫做？", a: ["利息", "利率", "分期付款", "股票"], c: 2, diff: 'mid' },
-        { q: "我的零用錢有200元，我想要的戰鬥陀螺也是200元，寶可夢娃娃也是200元，我只能選擇一個，另一個就不能得到，這叫做？", a: ["利息", "利率", "銀行", "機會成本"], c: 3, diff: 'hard' },
-        { q: "繳信用卡費的時候為什麼要全部繳清，不要過期不繳也不要只繳最低金額？", a: ["因為循環利息利滾利之後要還的錢很多", "因為這樣對小白不好", "因為會賺錢", "因為這樣成績不好"], c: 0, diff: 'easy' },
-        { q: "金錢是什麼？", a: ["用勞力時間換得可以用來買東西", "遊戲幣", "貝殼", "不重要的東西"], c: 0, diff: 'easy' },
-        { q: "金錢可以用來買什麼，哪一個是錯的？", a: ["買想要的東西", "買別人的時間", "買別人的服務", "回到健康"], c: 3, diff: 'easy' },
-        { q: "匯率是什麼意思？", a: ["兌換其他貨幣的比率", "匯錢時的手續費", "存錢在銀行得到的利息", "跟我沒有關係"], c: 0, diff: 'mid' },
-        { 
-            q: "新台幣兌日幣的匯率以前是 1:4（1元台幣換4日幣），現在變成 1:5（1元台幣換5日幣），這表示？", 
-            a: [
-                "新台幣升值，拿新台幣可以買到更多日幣商品", 
-                "新台幣貶值，拿新台幣可以買到更多日幣商品", 
-                "新台幣升值，拿新台幣買到的日幣商品變少了", 
-                "新台幣貶值，拿新台幣買到的日幣商品變少了"
-            ], 
-            c: 0, 
-            diff: 'mid' 
-        },
-
-        // --- 【類別 3：資產 vs 負債】 ---
-        { q: "買入一種會幫你生錢的金融商品，它會幫你把錢放進口袋，這是？", a: ["資產", "負債", "垃圾", "負擔"], c: 0, diff: 'hard' },
-        { q: "買了一台每個月都要換電池的遙控車，這台車是？", a: ["資產", "負債", "收藏品", "投資"], c: 1, diff: 'mid' },
-        { q: "會隨時間增值的房子或股票，通常被稱為？", a: ["消費品", "資產", "負債", "禮物"], c: 1, diff: 'mid' },
-        { q: "會讓你不斷花錢維修、付利息的東西是？", a: ["資產", "負債", "好東西", "零食"], c: 1, diff: 'easy' },
-        { q: "存錢在銀行收利息(利息>通貨膨脹)，這筆存款是你的？", a: ["資產", "負債", "負擔", "魔法"], c: 0, diff: 'easy' },
-
-        // --- 【類別 4：需要 vs 想要】 ---
-        { q: "口渴時買的白開水，是屬於？", a: ["想要", "需要", "投資", "浪費"], c: 1, diff: 'easy' },
-        { q: "同學都有最新款的貼紙，你也想買，這是？", a: ["想要", "需要", "必要的", "資產"], c: 0, diff: 'easy' },
-        { q: "每天必須吃的營養午餐，是？", a: ["想要", "需要", "多餘的", "負債"], c: 1, diff: 'easy' },
-        { q: "零用錢有限時，應該先買哪個？", a: ["想要的", "需要的", "隨便買", "最貴的"], c: 1, diff: 'mid' },
-        { q: "存錢存很久才買的夢想禮物，這叫？", a: ["立即享樂", "延遲享樂", "浪費錢", "沒意義"], c: 1, diff: 'hard' },
-
-        // --- 【類別 5：反詐騙認知】 ---
-        { q: "有人說『穩賺不賠、馬上匯錢』，這是什麼？", a: ["魔法", "詐騙", "好心", "機會"], c: 1, diff: 'hard' },
-        { q: "接到陌生電話說爸爸出事了要你匯錢救他，該怎麼辦？", a: ["快去買", "給他密碼", "掛掉並找家長確認", "罵他"], c: 2, diff: 'mid' },
-        { q: "好朋友在網路上跟你說他發生什麼事好可憐希望你借錢給他？", a: ["一種遊戲", "詐騙要馬上封鎖", "運氣不好", "賺錢的方法"], c: 1, diff: 'easy' },
-        { q: "網路遊戲有人要跟你換帳號密碼，說要送你神裝？", a: ["趕快換", "是詐騙，不要給", "他人很好", "試試看"], c: 1, diff: 'easy' },
-        { q: "天上掉下來的白吃午餐（免費拿大錢），通常是？", a: ["幸運", "詐騙陷阱", "真正的禮物", "魔法"], c: 1, diff: 'mid' },
-
-        // --- 【類別 6：基本物價體感與通膨】 ---
-        { q: "現在便利商店的一顆茶葉蛋，大約是多少錢？", a: ["1 元", "10 元", "50 元", "100 元"], c: 1, diff: 'easy' },
-        { q: "一瓶家庭號大鮮奶大約要多少金幣？", a: ["50 元", "160-200 元", "1000 元", "5 元"], c: 1, diff: 'mid' },
-        { q: "為什麼以前茶葉蛋只要 8 元現在要 10 元？", a: ["蛋變大了", "通膨(東西變貴)", "老闆心情好", "沒變"], c: 1, diff: 'hard' },
-        { q: "買麥當勞套餐大約要花多少？", a: ["10 元", "100-150 元", "1000 元", "5 元"], c: 1, diff: 'mid' },
-        { q: "如果錢包有100元，茶葉蛋10元，你可以買幾顆？", a: ["5 顆", "10 顆", "1 顆", "100 顆"], c: 1, diff: 'easy' },
-        { q: "在不同地方買同樣的水價格不同，這叫？", a: ["被騙", "環境與方便的價值", "魔法", "沒差別"], c: 1, diff: 'hard' }
+        { q: "爸爸每天上班，這是付出什麼換錢？", a: ["時間", "身體", "運氣", "魔法"], c: 0 },
+        { q: "現在便利商店的一顆茶葉蛋，大約是多少錢？", a: ["1 元", "10 元", "50 元", "100 元"], c: 1 },
+        { q: "有人說『穩賺不賠、馬上匯錢』，這是什麼？", a: ["魔法", "詐騙", "好心", "機會"], c: 1 },
+        { q: "銀行的業務不包含下列哪一項？", a: ["貸款", "存款", "賣盤子", "匯款"], c: 2 }
     ];
 
-    let state = { coins: 0, combo: 0, qIdx: 0, quizSet: [], isLock: false };
+    let state = { coins: 0, qIdx: 0, quizSet: [], isLock: false };
+
+    // YouTube API 準備就緒時自動執行
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            videoId: 'M816Wz-5gUM',
+            playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'M816Wz-5gUM', 'playsinline': 1 },
+            events: {
+                'onReady': () => {
+                    const btn = document.getElementById('start-btn');
+                    btn.innerText = "啟動引擎 (Start Engine)";
+                    btn.onclick = startEngine;
+                }
+            }
+        });
+    }
 
     function startEngine() {
-        const audioIframe = document.getElementById('bg-audio');
-        audioIframe.src = "https://www.youtube.com/embed/M816Wz-5gUM?autoplay=1&loop=1&playlist=M816Wz-5gUM";
+        // 在使用者點擊的瞬間啟動播放，iOS 才會允許聲音播放
+        if (player && player.playVideo) {
+            player.playVideo();
+        }
 
         document.getElementById('video-overlay').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('video-overlay').style.display = 'none';
-            document.getElementById('dashboard').style.opacity = '1';
+            document.getElementById('dashboard').style.display = 'flex';
             document.getElementById('quiz-box').style.display = 'block';
             document.getElementById('mario-hero').style.display = 'block';
             startGame();
@@ -176,10 +114,8 @@
     }
 
     function startGame() {
-        state.coins = 0; state.combo = 0; state.qIdx = 0;
-        // 修正：不使用 .slice(0, 10)，直接把陣列內所有題目隨機洗牌後全部載入！
+        state.coins = 0; state.qIdx = 0;
         state.quizSet = questionBank.sort(() => 0.5 - Math.random());
-        updateUI();
         renderQuestion();
     }
 
@@ -187,12 +123,10 @@
         const container = document.getElementById('options-container');
         const qText = document.getElementById('question-text');
         
-        // 修正：動態判定指針是否大於或等於當前洗牌後的總題庫數量
         if (state.qIdx >= state.quizSet.length) { finish(); return; }
 
         const data = state.quizSet[state.qIdx];
-        // 加入賽道進度提示 [目前題號 / 總題數]
-        qText.innerText = `[第 ${state.qIdx + 1} / ${state.quizSet.length} 關] ${data.q}`;
+        qText.innerText = `[第 ${state.qIdx + 1} 關] ${data.q}`;
         container.innerHTML = '';
         data.a.forEach((txt, i) => {
             const b = document.createElement('button');
@@ -207,43 +141,24 @@
         if (state.isLock) return;
         state.isLock = true;
         const data = state.quizSet[state.qIdx];
-        const mario = document.getElementById('mario-hero');
 
-        // 修正：將 data.correct 修正為判定 data.c 屬性
         if (idx === data.c) {
-            state.combo++;
-            let base = data.diff === 'h' ? 80 : (data.diff === 'm' ? 50 : 30);
-            state.coins += Math.floor(base * (state.combo >= 3 ? 1.5 : 1));
-            pop(state.combo >= 3 ? 'effect-mushroom' : 'effect-coin');
+            state.coins += 50;
         } else {
-            state.combo = 0; state.coins -= 50;
-            mario.style.transform = 'translateX(-50%) rotate(360deg)';
-            setTimeout(() => mario.style.transform = 'translateX(-50%)', 500);
+            state.coins -= 20;
         }
 
-        updateUI();
-        setTimeout(() => {
-            state.qIdx++; state.isLock = false; renderQuestion();
-        }, 1100);
-    }
-
-    function pop(id) {
-        const el = document.getElementById(id);
-        el.classList.remove('anim-pop');
-        void el.offsetWidth;
-        el.classList.add('anim-pop');
-    }
-
-    function updateUI() {
         document.getElementById('coin-count').innerText = state.coins;
         document.getElementById('egg-count').innerText = Math.floor(state.coins / 10);
+
+        setTimeout(() => {
+            state.qIdx++; state.isLock = false; renderQuestion();
+        }, 800);
     }
 
     function finish() {
-        // 修正：動態顯示累積戰利品總額
-        const finalEggs = Math.floor(state.coins / 10);
-        document.getElementById('question-text').innerText = `🏁 終點通關！\n你開完了全部賽道！\n總共獲得了 ${state.coins} 枚金幣！\n這週累積的腦力價值相當於 ${finalEggs} 顆茶葉蛋！`;
-        document.getElementById('options-container').innerHTML = '<button class="option-btn" style="width: 80%" onclick="startGame()">重新挑戰完整賽道</button>';
+        document.getElementById('question-text').innerText = `🏁 挑戰結束！\n總共獲得了 ${state.coins} 枚金幣！`;
+        document.getElementById('options-container').innerHTML = '<button class="option-btn" onclick="location.reload()">重新開始</button>';
     }
 </script>
 </body>
