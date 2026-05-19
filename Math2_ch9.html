@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>瑪利歐乘法大挑戰</title>
+<style>
+    body {
+        font-family: 'Comic Sans MS', 'Microsoft JhengHei', sans-serif;
+        background-color: #5C94FC;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    #game-container {
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        max-width: 500px;
+        width: 90%;
+    }
+    h1 {
+        color: #E52521;
+        text-shadow: 2px 2px 0px #FFF, 3px 3px 0px #000;
+        letter-spacing: 2px;
+        margin-top: 0;
+    }
+    #progress {
+        font-size: 20px;
+        color: #555;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+    .equation {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 50px;
+        font-weight: bold;
+        margin: 30px 0;
+        color: #333;
+    }
+    .mario-block {
+        width: 60px;
+        height: 60px;
+        background-color: #F8D030;
+        border: 4px solid #000;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 40px;
+        color: #D88018;
+        box-shadow: inset -4px -4px 0px rgba(216, 128, 24, 0.8), inset 4px 4px 0px rgba(255, 255, 255, 0.6);
+        margin: 0 15px;
+        animation: float 0.8s ease-in-out infinite alternate;
+    }
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        100% { transform: translateY(-10px); }
+    }
+    .options {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin-top: 20px;
+    }
+    .option-btn {
+        background-color: #43B047;
+        color: white;
+        border: 4px solid #000;
+        border-radius: 15px;
+        font-size: 40px;
+        font-weight: bold;
+        padding: 15px 40px;
+        cursor: pointer;
+        box-shadow: 0 6px 0 #000;
+        transition: all 0.1s;
+        touch-action: manipulation;
+    }
+    .option-btn:active {
+        transform: translateY(6px);
+        box-shadow: 0 0 0 #000;
+    }
+    .option-btn:disabled {
+        background-color: #999;
+        cursor: not-allowed;
+        box-shadow: 0 6px 0 #666;
+    }
+    #message {
+        margin-top: 25px;
+        font-size: 24px;
+        font-weight: bold;
+        height: 35px;
+    }
+    #restart-btn {
+        display: none;
+        background-color: #E52521;
+        color: white;
+        border: 4px solid #000;
+        border-radius: 10px;
+        font-size: 24px;
+        font-weight: bold;
+        padding: 10px 20px;
+        cursor: pointer;
+        margin-top: 20px;
+        box-shadow: 0 4px 0 #000;
+    }
+    #restart-btn:active {
+        transform: translateY(4px);
+        box-shadow: 0 0 0 #000;
+    }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>⭐ 乘法大挑戰 ⭐</h1>
+    <div id="progress">第 1 / 5 題</div>
+    
+    <div id="quiz-area">
+        <div class="equation">
+            <span id="num1">7</span> 
+            <span>×</span> 
+            <div class="mario-block">?</div> 
+            <span>=</span> 
+            <span id="result">14</span>
+        </div>
+        
+        <div class="options">
+            <button class="option-btn" onclick="checkAnswer(0)" id="btn0">2</button>
+            <button class="option-btn" onclick="checkAnswer(1)" id="btn1">3</button>
+        </div>
+    </div>
+
+    <div id="message"></div>
+    <button id="restart-btn" onclick="startGame()">再玩一次！</button>
+</div>
+
+<script>
+    /* =========================================
+       音效雙引擎：本地 mp3 + Web Audio API 備援
+    ========================================= */
+
+    const audioCorrect = new Audio('sounds/mariogrow.mp3');
+    const audioWrong = new Audio('sounds/mariodead.mp3');
+    const audioEnd = new Audio('sounds/marioclear.mp3');
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initSynthAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSynthSound(type) {
+        initSynthAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'correct') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(987.77, now);
+            osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.1);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else if (type === 'wrong') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150.00, now);
+            osc.frequency.exponentialRampToValueAtTime(80.00, now + 0.3);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+            osc.start(now);
+            osc.stop(now + 0.4);
+        }
+    }
+
+    function playWinSynthSound() {
+        initSynthAudio();
+        const now = audioCtx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; 
+        notes.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + i * 0.1);
+            gain.gain.setValueAtTime(0.3, now + i * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.2);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + i * 0.1);
+            osc.stop(now + i * 0.1 + 0.2);
+        });
+    }
+
+    function playSound(type) {
+        initSynthAudio(); 
+        try {
+            if (type === 'correct') {
+                audioCorrect.currentTime = 0;
+                audioCorrect.play().catch(() => playSynthSound('correct'));
+            } else if (type === 'wrong') {
+                audioWrong.currentTime = 0;
+                audioWrong.play().catch(() => playSynthSound('wrong'));
+            }
+        } catch(e) { 
+            playSynthSound(type); 
+        }
+    }
+
+    function playEndSound() {
+        initSynthAudio();
+        try {
+            audioEnd.currentTime = 0;
+            audioEnd.play().catch(() => playWinSynthSound());
+        } catch(e) { 
+            playWinSynthSound(); 
+        }
+    }
+
+    /* =========================================
+       遊戲邏輯處理
+    ========================================= */
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let questions = [];
+    const TOTAL_QUESTIONS = 5;
+
+    function generateQuestions() {
+        questions = [];
+        for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+            let a = Math.floor(Math.random() * 9) + 1;
+            let b = Math.floor(Math.random() * 9) + 1;
+            let answer = b;
+            
+            let wrongAnswer;
+            do {
+                wrongAnswer = Math.floor(Math.random() * 9) + 1;
+            } while (wrongAnswer === answer);
+
+            let options = Math.random() > 0.5 ? [answer, wrongAnswer] : [wrongAnswer, answer];
+            let correctIndex = options.indexOf(answer);
+
+            questions.push({
+                num1: a,
+                result: a * b,
+                options: options,
+                correctIndex: correctIndex
+            });
+        }
+    }
+
+    function startGame() {
+        // 第一次點擊「再玩一次」時，也會順便初始化音效設定
+        initSynthAudio();
+        
+        score = 0;
+        currentQuestionIndex = 0;
+        document.getElementById('restart-btn').style.display = 'none';
+        document.getElementById('quiz-area').style.display = 'block';
+        document.getElementById('message').innerText = '';
+        generateQuestions();
+        showQuestion();
+    }
+
+    function showQuestion() {
+        let q = questions[currentQuestionIndex];
+        document.getElementById('progress').innerText = `第 ${currentQuestionIndex + 1} / ${TOTAL_QUESTIONS} 題`;
+        document.getElementById('num1').innerText = q.num1;
+        document.getElementById('result').innerText = q.result;
+        document.getElementById('btn0').innerText = q.options[0];
+        document.getElementById('btn1').innerText = q.options[1];
+        
+        document.getElementById('btn0').disabled = false;
+        document.getElementById('btn1').disabled = false;
+        document.getElementById('message').innerText = '';
+    }
+
+    function checkAnswer(selectedIndex) {
+        document.getElementById('btn0').disabled = true;
+        document.getElementById('btn1').disabled = true;
+
+        let q = questions[currentQuestionIndex];
+        let msgElement = document.getElementById('message');
+
+        if (selectedIndex === q.correctIndex) {
+            score++;
+            msgElement.innerText = "🍄 答對了！太棒了！";
+            msgElement.style.color = "#43B047";
+            playSound('correct'); // 觸發答對音效
+        } else {
+            msgElement.innerText = "💦 哎呀，答錯了！正確答案是 " + q.options[q.correctIndex];
+            msgElement.style.color = "#E52521";
+            playSound('wrong'); // 觸發答錯音效
+        }
+
+        setTimeout(() => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < TOTAL_QUESTIONS) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }, 1500); 
+    }
+
+    function showResult() {
+        document.getElementById('quiz-area').style.display = 'none';
+        document.getElementById('progress').innerText = "🎉 遊戲結束！";
+        
+        let msgElement = document.getElementById('message');
+        if (score === TOTAL_QUESTIONS) {
+            msgElement.innerText = `🏆 滿分過關！你得到了 ${score} 分！`;
+            msgElement.style.color = "#D88018";
+        } else {
+            msgElement.innerText = `🌟 你答對了 ${score} 題！繼續加油喔！`;
+            msgElement.style.color = "#333";
+        }
+        
+        playEndSound(); // 觸發結算音效
+        document.getElementById('restart-btn').style.display = 'inline-block';
+    }
+
+    // 初始化啟動遊戲
+    startGame();
+</script>
+</body>
+</html>
