@@ -91,12 +91,15 @@
         }
 
         #question {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: bold;
             margin-bottom: 30px;
             color: #000;
-            min-height: 80px;
+            min-height: 100px;
             text-shadow: 1px 1px 0px #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .options-grid {
@@ -127,7 +130,8 @@
         .btn-start:hover { background: #ff4757; }
 
         .hidden { display: none !important; }
-/* 👇 新增這一段，限制結算畫面的高度並啟用 Flexbox */
+
+        /* 限制結算畫面的高度並啟用 Flexbox */
         #score-screen {
             display: flex;
             flex-direction: column;
@@ -135,7 +139,6 @@
             overflow: hidden;
         }
 
-        /* 原本的 review-box 保持這樣就可以了 */
         #review-box {
             flex-grow: 1;
             overflow-y: auto;
@@ -159,7 +162,7 @@
 
         @media (max-width: 500px) {
             .options-grid { grid-template-columns: 1fr; }
-            #question { font-size: 1.4rem; }
+            #question { font-size: 1.2rem; }
         }
     </style>
 </head>
@@ -172,8 +175,8 @@
     <div class="rivet r-br"></div>
 
     <div id="start-screen">
-        <h1 style="color: #000; text-shadow: 2px 2px 0px #fff; font-size: 2.2rem;">🍄 成語百寶箱<br>挑戰！</h1>
-        <p style="font-weight:bold; font-size: 1.2rem;">敲開問號方塊，挑戰你的成語大腦！<br>總共 20 題，每題 20 秒鐘 ⏳</p>
+        <h1 style="color: #000; text-shadow: 2px 2px 0px #fff; font-size: 2.2rem;">🍄 成語百寶箱<br>造句挑戰！</h1>
+        <p style="font-weight:bold; font-size: 1.2rem;">敲開問號方塊，選出最適合填入句子的成語！<br>系統將隨機抽考 20 題，每題 20 秒鐘 ⏳</p>
         <button class="btn btn-start" onclick="startGame()" style="width: 250px; margin-top: 20px;">🎮 開始挑戰</button>
     </div>
 
@@ -208,13 +211,10 @@
 /* =========================================
    音效雙引擎：本地 mp3 + Web Audio API 備援
 ========================================= */
-
-// --- 讀取本地音效檔案 ---
 const audioCorrect = new Audio('sounds/mariogrow.mp3');
 const audioWrong = new Audio('sounds/mariodead.mp3');
 const audioEnd = new Audio('sounds/marioclear.mp3');
 
-// --- 備用電子合成音效 (萬一 mp3 讀不到時自動啟動) ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 
@@ -268,9 +268,8 @@ function playWinSynthSound() {
     });
 }
 
-// --- 整合播放控制器 ---
 function playSound(type) {
-    initSynthAudio(); // 解鎖音效限制
+    initSynthAudio();
     try {
         if (type === 'correct') {
             audioCorrect.currentTime = 0;
@@ -295,31 +294,52 @@ function playEndSound() {
 }
 
 /* =========================================
-   成語題庫與遊戲邏輯
+   成語題庫（填空造句版）
 ========================================= */
-const quizData = [
-    { q: "每家每戶都知道的事情？", a: ["家喻戶曉", "名噪一時"], correct: 0 },
-    { q: "懂了一個道理，就能推知其他同類的事情？", a: ["觸類旁通", "易如反掌"], correct: 0 },
-    { q: "遭受挫折就再也振作不起來？", a: ["一蹶不振", "半途而廢"], correct: 0 },
-    { q: "事情做起來非常容易，像翻手掌一樣？", a: ["熟能生巧", "易如反掌"], correct: 1 },
-    { q: "一開始就取得勝利，比喻事情一開始就成功？", a: ["出奇制勝", "旗開得勝"], correct: 1 },
-    { q: "情況越來越糟？", a: ["每況愈下", "苟延殘喘"], correct: 0 },
-    { q: "拿不定主意，遲遲無法做決定？", a: ["猶豫不決", "似是而非"], correct: 0 },
-    { q: "用傲慢的氣勢壓迫別人？", a: ["盛氣凌人", "怒髮衝冠"], correct: 0 },
-    { q: "比喻順利被挑選中？", a: ["雀屏中選", "後起之秀"], correct: 0 },
-    { q: "形容寫字筆力很深？", a: ["振筆疾書", "力透紙背"], correct: 1 },
-    { q: "隨便亂猜，聽信沒有實際根據的謠言？", a: ["捕風捉影", "似是而非"], correct: 0 },
-    { q: "到處遊覽美麗的山水風景？", a: ["跋山涉水", "遊山玩水"], correct: 1 },
-    { q: "形容風景非常優美？", a: ["山明水秀", "遊山玩水"], correct: 0 },
-    { q: "比喻有經驗的人對情況熟悉，能指引別人？", a: ["老馬識途", "吳牛喘月"], correct: 0 },
-    { q: "比喻強者欺凌、吞併弱者？", a: ["弱不禁風", "弱肉強食"], correct: 1 },
-    { q: "從失敗的劣勢中轉為勝利？", a: ["反敗為勝", "旗開得勝"], correct: 0 },
-    { q: "單獨一個人，得不到任何人的幫忙？", a: ["孤立無援", "自討苦吃"], correct: 0 },
-    { q: "比喻真心相待，對朋友非常講義氣？", a: ["肝膽相照", "臥薪嘗膽"], correct: 0 },
-    { q: "事情做一半就停下來，沒有完成？", a: ["半途而廢", "一氣呵成"], correct: 0 },
-    { q: "練習得很熟練，就能找出巧妙的方法？", a: ["巧婦難為", "熟能生巧"], correct: 1 }
+let allQuizData = [
+    { q: "這位明星(　　　)，連爺爺奶奶都認識她。", a: ["家喻戶曉", "觸類旁通"], correct: 0 },
+    { q: "活用知識，務求(　　　)，不必硬記死背。", a: ["觸類旁通", "家喻戶曉"], correct: 0 },
+    { q: "自從上次比賽落敗後他自此(　　　)，再也不願意參加。", a: ["一蹶不振", "易如反掌"], correct: 0 },
+    { q: "這項工作對於有相關經驗的他簡直(　　　)，一下子就可以完成。", a: ["易如反掌", "一蹶不振"], correct: 0 },
+    { q: "別氣餒！只要我們齊心協力，終究會有(　　　)的機會。", a: ["反敗為勝", "旗開得勝"], correct: 0 },
+    { q: "這場比賽一開始小白就(　　　)贏得一分，最後勝利女神是否會對著他微笑呢？", a: ["旗開得勝", "反敗為勝"], correct: 0 },
+    { q: "如果遇到問題不解決，狀況就會(　　　)，最終一事無成。", a: ["每況愈下", "異口同聲"], correct: 0 },
+    { q: "經過了烈日下半小時的行走，大家都(　　　)地希望能休息片刻。", a: ["異口同聲", "每況愈下"], correct: 0 },
+    { q: "這次大樂透，大家都祈禱自己能(　　　)，贏得一億元獎金。", a: ["雀屏中選", "盛氣凌人"], correct: 0 },
+    { q: "那位同學在前一個學校因為(　　　)的態度被迫轉學到本校。", a: ["盛氣凌人", "雀屏中選"], correct: 0 },
+    { q: "這本小說對於人物的刻畫可謂是(　　　)，最後成為經典流傳於世。", a: ["力透紙背", "捕風捉影"], correct: 0 },
+    { q: "隨意相信(　　　)的消息，是很容易被騙的。", a: ["捕風捉影", "力透紙背"], correct: 0 },
+    { q: "這次出遊有(　　　)的他帶路，想必不會迷路。", a: ["老馬識途", "靈丹妙藥"], correct: 0 },
+    { q: "再多的(　　　)都治不好師姊的傷，一個月之後就傷重而亡。", a: ["靈丹妙藥", "老馬識途"], correct: 0 },
+    { q: "防颱工作要怎麼做？只要有(　　　)的警戒心，就能未雨綢繆！", a: ["居安思危", "有容乃大"], correct: 0 },
+    { q: "他平日為人處事(　　　)，想必日後必有一番作為。", a: ["有容乃大", "居安思危"], correct: 0 },
+    { q: "爸爸上個月帶我們去(　　　)的日月潭騎腳踏車。", a: ["山明水秀", "遊山玩水"], correct: 0 },
+    { q: "媽媽喜歡(　　　)，今年幾乎每個月都花費不少在旅遊上。", a: ["遊山玩水", "跋山涉水"], correct: 0 },
+    { q: "經過一番(　　　)，我們總算到達了目的地。", a: ["跋山涉水", "賞心悅目"], correct: 0 },
+    { q: "俊男美女(　　　)，添增了這場表演的可看度。", a: ["賞心悅目", "山明水秀"], correct: 0 },
+    { q: "儘管老師(　　　)一再提醒他，他都不願意改進。", a: ["義正辭嚴", "氣焰薰天"], correct: 0 },
+    { q: "面對敵人他(　　　)，氣勢浩大，一時之間無人敢上前攻擊。", a: ["氣焰薰天", "義正辭嚴"], correct: 0 },
+    { q: "因生病向來(　　　)的她，遇到危險竟然有一身蠻力擊退歹徒。", a: ["弱不禁風", "骨瘦如柴"], correct: 0 },
+    { q: "一昧地追求(　　　)的身材，是非常不健康的。", a: ["骨瘦如柴", "弱不禁風"], correct: 0 },
+    { q: "減肥要適可而止，(　　　)，對健康有害。", a: ["過猶不及", "不得要領"], correct: 0 },
+    { q: "學習新事物時，如果沒有老師從旁指導，往往會(　　　)。", a: ["不得要領", "過猶不及"], correct: 0 },
+    { q: "這個棒球隊的隊員(　　　)，團隊氣氛很好，常常贏得勝利。", a: ["肝膽相照", "軟硬兼施"], correct: 0 },
+    { q: "老師(　　　)好說歹說，終於說服小家去游泳了。", a: ["軟硬兼施", "肝膽相照"], correct: 0 },
+    { q: "您就(　　　)，原諒我這一次吧！我一定不會再犯了！", a: ["菩薩心腸", "獨當一面"], correct: 0 },
+    { q: "經過多年的實習，小陳終於可以(　　　)了。", a: ["獨當一面", "菩薩心腸"], correct: 0 },
+    { q: "小陳對於這件事情(　　　)，你就不用再對他說了。", a: ["漠不關心", "扶老攜幼"], correct: 0 },
+    { q: "國家一旦戰亂頻傳，人民只能(　　　)，四處逃難。", a: ["扶老攜幼", "漠不關心"], correct: 0 },
+    { q: "推展民主政治是一項(　　　)的工作，我們必須不斷努力才行。", a: ["任重道遠", "任勞任怨"], correct: 0 },
+    { q: "小李長久以來(　　　)地工作，得到上級的賞識本是理所當然。", a: ["任勞任怨", "任重道遠"], correct: 0 },
+    { q: "他的高言卓見，真是(　　　)，震驚了與會所有人士。", a: ["不同凡響", "當務之急"], correct: 0 },
+    { q: "眼下(　　　)是解決問題，而不是拖延。", a: ["當務之急", "不同凡響"], correct: 0 },
+    { q: "龍傲天最喜歡說的話就是：我已非當年的(　　　)，盡管放馬過來吧！", a: ["吳下阿蒙", "趨炎附勢"], correct: 0 },
+    { q: "如今天下(　　　)的人當道，究竟是教育失敗，還是道德淪喪？", a: ["趨炎附勢", "吳下阿蒙"], correct: 0 },
+    { q: "沉浸於電動的他，不管發生任何事情他都(　　　)。", a: ["紋風不動", "淚流滿面"], correct: 0 },
+    { q: "想起死去的親人，他不禁(　　　)。", a: ["淚流滿面", "紋風不動"], correct: 0 }
 ];
 
+let activeQuizData = [];
 let currentIdx = 0;
 let score = 0;
 let timeLeft = 20;
@@ -336,20 +356,22 @@ function shuffleArray(array) {
 
 function startGame() {
     initSynthAudio();
-    // 預載入音效以防延遲
     audioCorrect.load();
     audioWrong.load();
     audioEnd.load();
     
-    shuffleArray(quizData);
+    // 隨機打亂並抽取 20 題進行挑戰
+    shuffleArray(allQuizData);
+    activeQuizData = allQuizData.slice(0, 20);
+
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('quiz-screen').classList.remove('hidden');
     showQuestion();
 }
 
 function showQuestion() {
-    if (currentIdx >= quizData.length) return endGame();
-    const data = quizData[currentIdx];
+    if (currentIdx >= activeQuizData.length) return endGame();
+    const data = activeQuizData[currentIdx];
     document.getElementById('question').innerText = data.q;
     const optionsDiv = document.getElementById('options');
     optionsDiv.innerHTML = '';
@@ -375,7 +397,7 @@ function startTimer() {
     timer = setInterval(() => {
         timeLeft--;
         updateTimerUI();
-        if (timeLeft <= 0) handleAnswer(false, null, quizData[currentIdx].a[quizData[currentIdx].correct]);
+        if (timeLeft <= 0) handleAnswer(false, null, activeQuizData[currentIdx].a[activeQuizData[currentIdx].correct]);
     }, 1000);
 }
 
@@ -387,7 +409,7 @@ function updateTimerUI() {
 
 function handleAnswer(isCorrect, chosenOpt, correctOpt) {
     clearInterval(timer);
-    const data = quizData[currentIdx];
+    const data = activeQuizData[currentIdx];
     
     if (isCorrect) {
         score += 5; 
@@ -414,7 +436,6 @@ function endGame() {
     scoreScreen.classList.remove('hidden');
     document.getElementById('final-score').innerText = `🏆 總得分：${score} 分`;
 
-    // 播放本地 mp3 過關音效
     playEndSound();
 
     const reviewDiv = document.getElementById('review-box');
@@ -430,7 +451,7 @@ function endGame() {
         html += '</div>';
         reviewDiv.innerHTML = html;
     } else {
-        reviewDiv.innerHTML = '<h3 style="color: #27ae60; text-align:center; font-size: 1.5rem;">🌟 滿分太神啦！百寶箱裡的成語都被你答對了！</h3>';
+        reviewDiv.innerHTML = '<h3 style="color: #27ae60; text-align:center; font-size: 1.5rem;">🌟 滿分太神啦！造句填空都難不倒你！</h3>';
     }
 }
 </script>
