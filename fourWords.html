@@ -176,7 +176,7 @@
 
     <div id="start-screen">
         <h1 style="color: #000; text-shadow: 2px 2px 0px #fff; font-size: 2.2rem;">🍄 成語百寶箱<br>造句挑戰！</h1>
-        <p style="font-weight:bold; font-size: 1.2rem;">敲開問號方塊，選出最適合填入句子的成語！<br>系統將從 10 大精選成語庫中隨機抽考 20 題 ⏳</p>
+        <p style="font-weight:bold; font-size: 1.2rem;">敲開問號方塊，選出最適合填入句子的成語！<br>系統將從 10 大精選成語庫中隨機抽考 20 題，每題 180 秒鐘 ⏳</p>
         <button class="btn btn-start" onclick="startGame()" style="width: 250px; margin-top: 20px;">🎮 開始挑戰</button>
     </div>
 
@@ -186,7 +186,7 @@
                 <circle class="timer-bg" cx="60" cy="60" r="55"></circle>
                 <circle id="timer-bar" class="timer-bar" cx="60" cy="60" r="55"></circle>
             </svg>
-            <div id="timer-text" class="timer-text">20</div>
+            <div id="timer-text" class="timer-text">180</div>
         </div>
         <div id="question">載入中...</div>
         <div class="options-grid" id="options"></div>
@@ -324,7 +324,7 @@ let allQuizData = [
 let activeQuizData = [];
 let currentIdx = 0;
 let score = 0;
-let timeLeft = 20;
+let timeLeft = 180;
 let timer;
 let wrongList = []; 
 const dashMax = 345;
@@ -373,7 +373,7 @@ function showQuestion() {
 }
 
 function startTimer() {
-    timeLeft = 20;
+    timeLeft = 180;
     updateTimerUI();
     clearInterval(timer);
     timer = setInterval(() => {
@@ -385,7 +385,7 @@ function startTimer() {
 
 function updateTimerUI() {
     document.getElementById('timer-text').innerText = timeLeft;
-    const offset = (dashMax * timeLeft) / 20;
+    const offset = (dashMax * timeLeft) / 180;
     document.getElementById('timer-bar').style.strokeDasharray = `${offset} ${dashMax}`;
 }
 
