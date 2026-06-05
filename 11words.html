@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍄 第十一課 字卡自動生成器</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 60px; /* 每張字卡之間的間距 */
+        }
+
+        /* 單張字卡外框，方便截圖 */
+        .card-container {
+            background: #ffffff;
+            width: 600px;
+            height: 350px;
+            border: 4px solid #000000;
+            border-radius: 15px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.1);
+            page-break-inside: avoid; /* 防止列印時被切斷 */
+        }
+
+        /* 中間的核心大字 */
+        .center-word {
+            width: 130px;
+            height: 130px;
+            border: 4px solid #000000;
+            border-radius: 50%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            position: relative;
+        }
+
+        .center-text {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: #000000;
+            line-height: 1;
+        }
+
+        /* 旁邊連出去的線段 */
+        .line {
+            position: absolute;
+            height: 4px;
+            background-color: #000000;
+            z-index: 1;
+            top: 50%;
+            margin-top: -2px;
+        }
+        .line-left { left: 80px; width: 150px; transform: rotate(15deg); transform-origin: right; }
+        .line-right { right: 80px; width: 150px; transform: rotate(-15deg); transform-origin: left; }
+
+        /* 左右兩邊的圈圈 */
+        .circle-node {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border: 4px solid #000000;
+            border-radius: 50%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+            z-index: 5;
+            text-align: center;
+        }
+
+        /* 課本基礎圈（綠色流）*/
+        .node-left {
+            left: 30px;
+            border-color: #43b047; /* 路易吉綠 */
+        }
+
+        /* 考古進階圈（紅色流）*/
+        .node-right {
+            right: 30px;
+            border-color: #e52521; /* 瑪利歐紅 */
+        }
+
+        /* 圈圈內部的圖與文字排版 */
+        .node-emoji {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .node-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #000000;
+        }
+
+        .node-desc {
+            font-size: 0.85rem;
+            color: #555555;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+
+        /* 錯字紅叉防禦標籤 */
+        .trap-badge {
+            background-color: #ff4757;
+            color: white;
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 1. 租 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">🏢</div>
+        <div class="node-title">合租屋</div>
+        <div class="node-desc">課本重點</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">租</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🚗</div>
+        <div class="node-title">租車/房租</div>
+        <div class="trap-badge">❌ 祖金</div>
+    </div>
+</div>
+
+<!-- 2. 蒙 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">👤</div>
+        <div class="node-title">蒙面</div>
+        <div class="node-desc">遮住臉</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">蒙</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🌫️</div>
+        <div class="node-title">蒙上一層灰</div>
+        <div class="trap-badge">❌ 濛</div>
+    </div>
+</div>
+
+<!-- 3. 瘦 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">🧍</div>
+        <div class="node-title">瘦弱/瘦小</div>
+        <div class="node-desc">課本重點</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">瘦</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">☠️</div>
+        <div class="node-title">骨瘦如柴</div>
+        <div class="node-desc">非常瘦！</div>
+    </div>
+</div>
+
+<!-- 4. 肺 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">🫁</div>
+        <div class="node-title">肺炎</div>
+        <div class="node-desc">課本重點(生病)</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">肺</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🩺</div>
+        <div class="node-title">肺部/肺病</div>
+        <div class="node-desc">身體器官</div>
+    </div>
+</div>
+
+<!-- 5. 炎 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">🔥</div>
+        <div class="node-title">肺炎</div>
+        <div class="node-desc">課本重點</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">炎</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">☀️</div>
+        <div class="node-title">炎熱</div>
+        <div class="node-desc">天氣好熱</div>
+    </div>
+</div>
+
+<!-- 6. 咳 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">😷</div>
+        <div class="node-title">咳嗽</div>
+        <div class="node-desc">生病不舒服</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">咳</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🗣️</div>
+        <div class="node-title">咳咳</div>
+        <div class="node-desc">喉嚨癢癢的</div>
+    </div>
+</div>
+
+<!-- 7. 醫 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">👨‍⚕️</div>
+        <div class="node-title">醫生</div>
+        <div class="node-desc">課本重點</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">醫</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🏥</div>
+        <div class="node-title">就醫/醫藥費</div>
+        <div class="node-desc">去醫院看病</div>
+    </div>
+</div>
+
+<!-- 8. 危 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">⚠️</div>
+        <div class="node-title">危急/危險</div>
+        <div class="node-desc">課本重點</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">危</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🏚️</div>
+        <div class="node-title">危樓</div>
+        <div class="node-desc">注意注音！</div>
+    </div>
+</div>
+
+<!-- 9. 嚴 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">🚨</div>
+        <div class="node-title">嚴重</div>
+        <div class="node-desc">課本重點</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">嚴</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">📖</div>
+        <div class="node-title">嚴謹</div>
+        <div class="trap-badge">❌ 炎謹</div>
+    </div>
+</div>
+
+<!-- 10. 藤 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">🌿</div>
+        <div class="node-title">常春藤</div>
+        <div class="node-desc">課本重點(植物)</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">藤</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🪑</div>
+        <div class="node-title">藤蔓/藤椅</div>
+        <div class="trap-badge">❌ 滕</div>
+    </div>
+</div>
+
+<!-- 11. 磚 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">🧱</div>
+        <div class="node-title">磚牆</div>
+        <div class="node-desc">課本重點</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">磚</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🟥</div>
+        <div class="node-title">紅磚/磚頭</div>
+        <div class="node-desc">蓋房子的材料</div>
+    </div>
+</div>
+
+<!-- 12. 薄 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">🍃</div>
+        <div class="node-title">薄荷</div>
+        <div class="node-desc">注意讀音：ㄅㄛˋ</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">薄</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🌫️</div>
+        <div class="node-title">薄霧/稀薄</div>
+        <div class="trap-badge">❌ 簿霧 (ㄅㄛˊ)</div>
+    </div>
+</div>
+
+<!-- 13. 賺 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">💰</div>
+        <div class="node-title">賺錢</div>
+        <div class="node-desc">課本重點</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">賺</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">📈</div>
+        <div class="node-title">賺取</div>
+        <div class="node-desc">獲得利益</div>
+    </div>
+</div>
+
+<!-- 14. 搬 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">📦</div>
+        <div class="node-title">搬著沉重</div>
+        <div class="node-desc">課本延伸動作</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">搬</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🚚</div>
+        <div class="node-title">搬運</div>
+        <div class="node-desc">移動東西</div>
+    </div>
+</div>
+
+<!-- 15. 梯 -->
+<div class="card-container">
+    <div class="circle-node node-left">
+        <div class="node-emoji">🪜</div>
+        <div class="node-title">梯子</div>
+        <div class="node-desc">課本重點</div>
+    </div>
+    <div class="line line-left"></div>
+    
+    <div class="center-word">
+        <div class="center-text">梯</div>
+    </div>
+    
+    <div class="line line-right"></div>
+    <div class="circle-node node-right">
+        <div class="node-emoji">🛗</div>
+        <div class="node-title">樓梯/電梯</div>
+        <div class="node-desc">上下樓的工具</div>
+    </div>
+</div>
+
+</body>
+</html>
