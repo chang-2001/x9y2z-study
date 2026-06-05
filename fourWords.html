@@ -53,53 +53,18 @@
         .r-bl { bottom: 15px; left: 15px; }
         .r-br { bottom: 15px; right: 15px; }
 
-        /* 倒數圓圈動畫 */
-        .timer-svg {
-            width: 120px;
-            height: 120px;
-            transform: rotate(-90deg);
-        }
-
-        .timer-svg circle {
-            fill: none;
-            stroke-width: 12;
-            stroke-linecap: round;
-        }
-
-        .timer-bg { stroke: rgba(0,0,0,0.1); }
-        .timer-bar {
-            stroke: var(--primary);
-            stroke-dasharray: 345;
-            transition: stroke-dasharray 1s linear;
-        }
-
-        .timer-container {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-
-        .timer-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #000;
-            text-shadow: 2px 2px 0px #fff;
-        }
-
         #question {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: bold;
+            margin-top: 20px;
             margin-bottom: 30px;
             color: #000;
-            min-height: 100px;
+            min-height: 120px;
             text-shadow: 1px 1px 0px #fff;
             display: flex;
             align-items: center;
             justify-content: center;
+            line-height: 1.5;
         }
 
         .options-grid {
@@ -111,7 +76,7 @@
         /* 磚塊風格按鈕 */
         .btn {
             padding: 20px;
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             border: 3px solid #000;
             border-radius: 8px;
             cursor: pointer;
@@ -162,7 +127,7 @@
 
         @media (max-width: 500px) {
             .options-grid { grid-template-columns: 1fr; }
-            #question { font-size: 1.2rem; }
+            #question { font-size: 1.3rem; }
         }
     </style>
 </head>
@@ -176,18 +141,12 @@
 
     <div id="start-screen">
         <h1 style="color: #000; text-shadow: 2px 2px 0px #fff; font-size: 2.2rem;">🍄 成語百寶箱<br>造句挑戰！</h1>
-        <p style="font-weight:bold; font-size: 1.2rem;">敲開問號方塊，選出最適合填入句子的成語！<br>系統將從 10 大精選成語庫中隨機抽考 20 題，每題 180 秒鐘 ⏳</p>
+        <p style="font-weight:bold; font-size: 1.2rem; line-height: 1.6;">敲開問號方塊，選出最適合填入句子的成語！<br>系統將從 10 大精選成語庫中隨機抽考 20 題。<br>✨ 本模式為「無壓力探索模式」，沒有時間限制，可以慢慢思考喔！ 🧭</p>
         <button class="btn btn-start" onclick="startGame()" style="width: 250px; margin-top: 20px;">🎮 開始挑戰</button>
     </div>
 
     <div id="quiz-screen" class="hidden">
-        <div class="timer-container">
-            <svg class="timer-svg">
-                <circle class="timer-bg" cx="60" cy="60" r="55"></circle>
-                <circle id="timer-bar" class="timer-bar" cx="60" cy="60" r="55"></circle>
-            </svg>
-            <div id="timer-text" class="timer-text">180</div>
-        </div>
+        <!-- 移除計時器 SVG 與文字區塊，還給大腦乾淨的視覺空間 -->
         <div id="question">載入中...</div>
         <div class="options-grid" id="options"></div>
     </div>
@@ -297,37 +256,34 @@ function playEndSound() {
    成語題庫（精選 10 大成語題庫版 - 共 22 題）
 ========================================= */
 let allQuizData = [
-    { q: "西遊記是(　　　)的傳奇故事。", a: ["家喻戶曉", "觸類旁通"], correct: 0 },
-    { q: "這位明星(　　　)，連爺爺奶奶都認識她。", a: ["家喻戶曉", "一蹶不振"], correct: 0 },
-    { q: "老師教過的事物他總能(　　　)，解決其他問題。", a: ["觸類旁通", "雀屏中選"], correct: 0 },
-    { q: "活用知識，務求(　　　)，不必硬記死背。", a: ["觸類旁通", "每況愈下"], correct: 0 },
-    { q: "上次考試考差後，他自此(　　　)，自暴自棄不再念書。", a: ["一蹶不振", "旗開得勝"], correct: 0 },
-    { q: "自從上次比賽落敗後他自此(　　　)，再也不願意參加。", a: ["一蹶不振", "反敗為勝"], correct: 0 },
-    { q: "這個比賽對你來說可以說是(　　　)，請你務必一定要參加。", a: ["易如反掌", "盛氣凌人"], correct: 0 },
-    { q: "這項工作對於有經驗的他(　　　)，一下子就可以完成。", a: ["易如反掌", "一蹶不振"], correct: 0 },
-    { q: "此次棒球賽樂高隊(　　　)，一路領先到最後。", a: ["旗開得勝", "每況愈下"], correct: 0 },
-    { q: "這場比賽一開始小白就(　　　)贏得一分。", a: ["旗開得勝", "異口同聲"], correct: 0 },
-    { q: "雖然一開始落後，但後來急起直追，最後(　　　)取得勝利。", a: ["反敗為勝", "易如反掌"], correct: 0 },
-    { q: "別氣餒！只要齊心協力，終究會有(　　　)的機會。", a: ["反敗為勝", "觸類旁通"], correct: 0 },
-    { q: "關於這個案件的嫌疑犯，鄰居皆(　　　)指認為這位男性。", a: ["異口同聲", "家喻戶曉"], correct: 0 },
-    { q: "經過烈日下半小時的行走，大家都(　　　)地希望能休息片刻。", a: ["異口同聲", "雀屏中選"], correct: 0 },
-    { q: "媽媽的病情(　　　)，醫生叫我們做好心理準備。", a: ["每況愈下", "反敗為勝"], correct: 0 },
-    { q: "這家公司的業績(　　　)，有倒閉的可能。", a: ["每況愈下", "旗開得勝"], correct: 0 },
-    { q: "如果遇到問題不解決，狀況就會(　　　)，最終一事無成。", a: ["每況愈下", "易如反掌"], correct: 0 },
-    { q: "他對別人的態度總是(　　　)，好像自己是皇帝一樣。", a: ["盛氣凌人", "觸類旁通"], correct: 0 },
-    { q: "那位同學在前一個學校因為(　　　)的態度被迫轉學到本校。", a: ["盛氣凌人", "異口同聲"], correct: 0 },
-    { q: "pagamo的抽獎問答我(　　　)得到了稀有道具。", a: ["雀屏中選", "一蹶不振"], correct: 0 },
-    { q: "他每天勤奮練習，終於(　　　)成為國家隊選手。", a: ["雀屏中選", "盛氣凌人"], correct: 0 },
-    { q: "這次大樂透，大家都祈禱自己能(　　　)，一舉贏得頭獎。", a: ["雀屏中選", "家喻戶曉"], correct: 0 }
+    { q: "西遊記是(   )的傳奇故事。", a: ["家喻戶曉", "觸類旁通"], correct: 0 },
+    { q: "這位明星(   )，連爺爺奶奶都認識她。", a: ["家喻戶曉", "一蹶不振"], correct: 0 },
+    { q: "老師教過的事物他總能(   )，解決其他問題。", a: ["觸類旁通", "雀屏中選"], correct: 0 },
+    { q: "活用知識，務求(   )，不必硬記死背。", a: ["觸類旁通", "每況愈下"], correct: 0 },
+    { q: "上次考試考差後，他自此(   )，自暴自棄不再念書。", a: ["一蹶不振", "旗開得勝"], correct: 0 },
+    { q: "自從上次比賽落敗後他自此(   )，再也不願意參加。", a: ["一蹶不振", "反敗為勝"], correct: 0 },
+    { q: "這個比賽對你來說可以說是(   )，請你務必一定要參加。", a: ["易如反掌", "盛氣凌人"], correct: 0 },
+    { q: "這項工作對於有經驗的他(   )，一下子就可以完成。", a: ["易如反掌", "一蹶不振"], correct: 0 },
+    { q: "此次棒球賽樂高隊(   )，一路領先到最後。", a: ["旗開得勝", "每況愈下"], correct: 0 },
+    { q: "這場比賽一開始小白就(   )贏得一分。", a: ["旗開得勝", "異口同聲"], correct: 0 },
+    { q: "雖然一開始落後，但後來急起直追，最後(   )取得勝利。", a: ["反敗為勝", "易如反掌"], correct: 0 },
+    { q: "別氣餒！只要齊心協力，終究會有(   )的機會。", a: ["反敗為勝", "觸類旁通"], correct: 0 },
+    { q: "關於這個案件的嫌疑犯，鄰居皆(   )指認為這位男性。", a: ["異口同聲", "家喻戶曉"], correct: 0 },
+    { q: "經過烈日下半小時的行走，大家都(   )地希望能休息片刻。", a: ["異口同聲", "雀屏中選"], correct: 0 },
+    { q: "媽媽的病情(   )，醫生叫我們做好心理準備。", a: ["每況愈下", "反敗為勝"], correct: 0 },
+    { q: "這家公司的業績(   )，有倒閉的可能。", a: ["每況愈下", "旗開得勝"], correct: 0 },
+    { q: "如果遇到問題不解決，狀況就會(   )，最終一事無成。", a: ["每況愈下", "易如反掌"], correct: 0 },
+    { q: "他對別人的態度總是(   )，好像自己是皇帝一樣。", a: ["盛氣凌人", "觸類旁通"], correct: 0 },
+    { q: "那位同學在前一個學校因為(   )的態度被迫轉學到本校。", a: ["盛氣凌人", "異口同聲"], correct: 0 },
+    { q: "pagamo的抽獎問答我(   )得到了稀有道具。", a: ["雀屏中選", "一蹶不振"], correct: 0 },
+    { q: "他每天勤奮練習，終於(   )成為國家隊選手。", a: ["雀屏中選", "盛氣凌人"], correct: 0 },
+    { q: "這次大樂透，大家都祈禱自己能(   )，一舉贏得頭獎。", a: ["雀屏中選", "家喻戶曉"], correct: 0 }
 ];
 
 let activeQuizData = [];
 let currentIdx = 0;
 let score = 0;
-let timeLeft = 180;
-let timer;
 let wrongList = []; 
-const dashMax = 345;
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -369,28 +325,10 @@ function showQuestion() {
         btn.onclick = () => handleAnswer(opt === correctStr, opt, correctStr);
         optionsDiv.appendChild(btn);
     });
-    startTimer();
-}
-
-function startTimer() {
-    timeLeft = 180;
-    updateTimerUI();
-    clearInterval(timer);
-    timer = setInterval(() => {
-        timeLeft--;
-        updateTimerUI();
-        if (timeLeft <= 0) handleAnswer(false, null, activeQuizData[currentIdx].a[activeQuizData[currentIdx].correct]);
-    }, 1000);
-}
-
-function updateTimerUI() {
-    document.getElementById('timer-text').innerText = timeLeft;
-    const offset = (dashMax * timeLeft) / 180;
-    document.getElementById('timer-bar').style.strokeDasharray = `${offset} ${dashMax}`;
+    // 拔除 startTimer()，不再進行任何時間倒數
 }
 
 function handleAnswer(isCorrect, chosenOpt, correctOpt) {
-    clearInterval(timer);
     const data = activeQuizData[currentIdx];
     
     if (isCorrect) {
@@ -398,7 +336,7 @@ function handleAnswer(isCorrect, chosenOpt, correctOpt) {
         playSound('correct');
         flashEffect('green');
     } else {
-        const reason = chosenOpt === null ? "時間到！" : `你選了：${chosenOpt}`;
+        const reason = chosenOpt === null ? "未作答" : `你選了：${chosenOpt}`;
         wrongList.push({ q: data.q, correct: correctOpt, wrong: reason });
         playSound('wrong');
         flashEffect('red');
