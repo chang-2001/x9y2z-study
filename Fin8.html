@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>理財駕照：100CC拉力挑戰賽</title>
+    <title>理財駕照：100CC硬核拉力挑戰賽</title>
     <style>
-        :root { --mario-red: #E52521; --mario-blue: #047AB2; --mario-yellow: #FFCB05; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: "Microsoft JhengHei", sans-serif; overflow: hidden; background: #5c94fc; }
-        #game-container { position: relative; width: 100vw; height: 100vh; background: linear-gradient(#5c94fc 70%, #94fbab 70%); }
+        :root { --mario-red: #E52521; --mario-blue: #047AB2; --mario-yellow: #FFCB05; --mario-green: #3d9a47; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: "Microsoft JhengHei", sans-serif; overflow-x: hidden; background: #5c94fc; }
+        #game-container { position: relative; width: 100vw; min-height: 100vh; background: linear-gradient(#5c94fc 70%, #94fbab 70%); padding-bottom: 20px; box-sizing: border-box; }
 
         /* 隱藏所有播放器 */
         .hidden-audio { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
         #video-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         
@@ -27,7 +27,7 @@
         }
 
         #quiz-box { 
-            position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
+            position: relative; margin: 0 auto; top: 120px;
             width: 85%; max-width: 600px; background: white; border-radius: 30px; border: 6px solid var(--mario-red);
             padding: 25px; text-align: center; box-shadow: 0 10px 0 rgba(0,0,0,0.2); z-index: 5; display: none;
         }
@@ -35,39 +35,54 @@
         .option-btn {
             display: inline-block; width: 90%; margin: 8px 0; padding: 15px;
             background: var(--mario-blue); color: white; border-radius: 15px;
-            font-size: 18px; border: none; cursor: pointer; box-shadow: 0 6px 0 #035a84; transition: transform 0.1s;
+            font-size: 18px; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 6px 0 #035a84; transition: transform 0.1s;
         }
         .option-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #035a84; }
 
-        #mario-hero { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 180px; z-index: 2; display: none; }
+        #mario-hero { display: block; margin: 140px auto 20px auto; width: 180px; z-index: 2; transition: transform 0.5s; }
         
-        #result-box { display: none; margin-top: 10px; font-size: 20px; font-weight: bold; }
+        #result-box { display: none; margin-top: 15px; font-size: 20px; font-weight: bold; padding: 10px; border-radius: 10px; }
+
+        /* 最終證照獎盃視覺樣式 */
+        .license-card {
+            background: linear-gradient(135deg, #fff3cc 0%, #ffeb99 100%);
+            border: 6px double #d4af37; border-radius: 20px; padding: 20px;
+            margin: 20px auto; box-shadow: 0 10px 20px rgba(0,0,0,0.15); text-align: center;
+        }
+        .license-title { font-size: 28px; font-weight: 900; color: #856404; margin-bottom: 10px; }
+        
+        /* 錯題列表樣式 */
+        .wrong-report { text-align: left; background: #fff5f5; border: 2px solid #feb2b2; border-radius: 15px; padding: 15px; margin-top: 20px; max-height: 250px; overflow-y: auto; }
+        .wrong-item { margin-bottom: 12px; font-size: 15px; border-bottom: 1px dashed #fbb6b6; padding-bottom: 8px; color: #c53030; }
+        .wrong-item strong { color: #2d3748; }
+        .wrong-item span { color: #2f855a; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <!-- 背景音樂播放器 -->
     <div id="bg-player" class="hidden-audio"></div>
-    <!-- 金幣音效播放器 -->
     <div id="coin-player" class="hidden-audio"></div>
-    <!-- 蘑菇音效 (HTML5 Audio) -->
     <audio id="mushroom-sfx" src="sounds/mariogrow.mp3" preload="auto"></audio>
 
     <div id="video-overlay">
-        <h2 style="color:white; text-shadow: 2px 2px red;">🏁 理財拉力賽：駕照考驗 🏁</h2>
-        <p style="color:white; margin-bottom: 20px;">目標：總分 500 金幣 ＋ 連續答對 5 題！</p>
+        <h2 style="color:white; text-shadow: 3px 3px red; font-size: 32px; margin-bottom: 10px;">🏁 100CC 理財拉力賽 🏁</h2>
+        <p style="color:#FFCB05; font-size: 20px; font-weight: bold; margin-bottom: 5px;">🔥 硬核考照規則更新 🔥</p>
+        <p style="color:white; font-size: 16px; margin-bottom: 25px; text-align: center; line-height: 1.6;">
+            及格門檻：<strong style="color:#55EFC4;">總分達 100 分</strong> ＋ <strong style="color:#55EFC4;">連續答對 3 題以上</strong>！<br>
+            <span style="color:#ff7675;">※ 答錯重罰倒扣 15 分並切斷連擊，一對一錯絕對不會過關！</span>
+        </p>
         <button class="option-btn" id="start-btn" style="width: 280px; background: #3d9a47; box-shadow: 0 8px 0 #2b6c33;">載入資源中...</button>
     </div>
 
     <div id="dashboard">
-        <div class="stat-box">💰 金幣: <span id="coin-count">0</span></div>
+        <div class="stat-box">💰 分數: <span id="coin-count">0</span> 分</div>
         <div class="stat-box" id="combo-box">🔥 連擊: <span id="combo-count">0</span></div>
         <div class="stat-box">🏆 最高連擊: <span id="max-combo-count">0</span></div>
     </div>
 
     <div id="quiz-box">
-        <div id="question-text" style="font-size: 22px; margin-bottom: 20px; font-weight: bold;"></div>
+        <div id="question-text" style="font-size: 22px; margin-bottom: 20px; font-weight: bold; line-height: 1.5;"></div>
         <div id="options-container"></div>
         <div id="result-box"></div>
     </div>
@@ -81,62 +96,66 @@
     let bgPlayer, coinPlayer;
     let mushroomSfx = document.getElementById('mushroom-sfx');
 
+    // 完整原始題庫（已將 c 與 correct 數據指針結構統一，並修正了存款利息題的邏輯盲點）
     const questionBank = [
         // --- 【類別 1：腦力與時間的價值】 ---
-        { cat: 1, q: "爸爸每天上班，這是付出什麼換錢？", a: ["時間", "身體", "運氣", "魔法"], c: 0 },
-        { cat: 1, q: "想要未來每小時賺到的金幣變多，現在該提升什麼？", a: ["打電動", "玩拉拉小白", "腦袋裝的知識", "身高"], c: 2 },
-        { cat: 1, q: "為什麼我們要學習理財？", a: ["為了變魔術", "為了父母", "為了唸書", "為了未來可能多一點的選擇"], c: 3 },
-        { cat: 1, q: "當你睡覺時，還能幫你賺錢的工具，這叫什麼？", a: ["神蹟", "魔法", "被動收入", "詐騙"], c: 2 },
-        { cat: 1, q: "在理財遊戲中，「用時間換金幣」跟「讓錢自己滾錢」，哪一種方式能讓身體更輕鬆、有更多時間休息？", a: ["用時間換金幣，每天跑個不停，像在滾輪上的小倉鼠", "讓錢自己滾錢", "兩者都一樣，都要一直流汗工作才有錢拿", "兩者都很累，就算錢會滾錢，我也要跟在後面推它"], c: 1 },
+        { cat: 1, q: "爸爸每天上班，這是付出什麼換錢？", a: ["時間", "身體", "運氣", "魔法"], c: 0, diff: 'easy' },
+        { cat: 1, q: "想要未來每小時賺到的金幣變多，現在該提升什麼？", a: ["打電動", "玩拉拉小白", "腦袋裝的知識", "身高"], c: 2, diff: 'easy' },
+        { cat: 1, q: "為什麼我們要學習理財？", a: ["為了變魔術", "為了父母", "為了唸書", "為了未來可能多一點的選擇"], c: 3, diff: 'hard' },
+        { cat: 1, q: "當你睡覺時，還能幫你賺錢的工具，這叫什麼？", a: ["神蹟", "魔法", "被動收入", "詐騙"], c: 2, diff: 'hard' },
+        { cat: 1, q: "在理財遊戲中，「用時間換金幣」跟「讓錢自己滾錢」，哪一種方式能讓身體更輕鬆、有更多時間休息？", a: ["用時間換金幣，每天跑個不停，像在滾輪上的小倉鼠", "讓錢自己滾錢", "兩者都一樣，都要一直流汗工作才有錢拿", "兩者都很累，就算錢會滾錢，我也要跟在後面推它"], c: 1, diff: 'mid' },
 
         // --- 【類別 2：商品定價,銀行,信用卡,存款利息,放款利率】 ---
-        { cat: 2, q: "一個店內販售的商品如蛋糕，定價不用考慮的是什麼？", a: ["成本", "在消費者心中的價值", "看老闆的心情", "店面租金"], c: 2 },
-        { cat: 2, q: "販售商品的成本是什麼意思，例如蛋糕，以下哪個不是製作蛋糕的成本？", a: ["糖的＄", "蛋的＄", "請蛋糕師傅做的薪水", "售價"], c: 3 },
-        { cat: 2, q: "銀行的業務不包含下列哪一項？", a: ["貸款（借錢）", "存款（存錢）", "賣盤子", "匯款"], c: 2 },
-        { cat: 2, q: "有關信用卡的敘述哪個是錯的？", a: ["刷卡買東西下個月要還錢", "每次繳卡費的時候繳最低金額就可以了", "刷卡其實是在借下個月的錢來用", "使用信用卡有不用帶太多現金的優點"], c: 1 },
-        { cat: 2, q: "跟爸爸銀行借 1000 元，月利息 10%。第一個月不還變 1100 元，第二個月變多少？", a: ["1100 元", "1210 元", "1500 元", "1000 元"], c: 1 },
-        { cat: 2, q: "跟爸爸銀行借 1000 元，月利息 10%。第一個月不還變 1100 元，第二個月變1210元，如果到了『第三個月』還是賴皮不還錢，總共要還多少錢？", a: ["1300 元", "1331 元", "1100 元", "1210 元"], c: 1 },
-        { cat: 2, q: "什麼叫『利滾利』？", a: ["錢越來越少", "利息也會生利息", "錢變不見", "小白打滾"], c: 1 },
-        { cat: 2, q: "存錢時的利率是什麼意思？", a: ["讓錢變多的加速蘑菇", "偷走金幣的食人花", "讓速度變慢的香蕉皮", "暫時無敵的星星"], c: 0 },
-        { cat: 2, q: "我想買的玩具有200元，但是不夠錢，我跟媽媽一個月繳50元，分4個月繳完叫做？", a: ["利息", "利率", "分期付款", "股票"], c: 2 },
-        { cat: 2, q: "我的零用錢有200元，我想要的戰鬥陀螺也是200元，寶可夢娃娃也是200元，我只能選擇一個，另一個就不能得到，這叫做？", a: ["利息", "利率", "銀行", "機會成本"], c: 3 },
-        { cat: 2, q: "繳信用卡費的時候怎麼做比較好？", a: ["要全部繳清，因為循環利息利滾利之後要還的錢很多", "過期不繳不會怎麼樣", "我想繳再繳就好", "只繳最低金額其他後面再繳就好"], c: 0 },
-        { cat: 2, q: "在現實生活中，「金錢」最主要的意義是什麼？", a: ["一種交換工具，可以用勞力或時間換來，並用來購買需要的東西", "一種魔法藥水，只要喝下去就能變得長生不老", "一種裝飾品，只能用來貼在牆上讓房間變得亮晶晶", "一種玩具，只有在玩大富翁遊戲時才有用，現實中不能用"], c: 0 },
-        { cat: 2, q: "金錢可以用來買什麼，哪一個是錯的？", a: ["買想要的東西", "買別人的時間", "買別人的服務", "回到健康"], c: 3 },
-        { cat: 2, q: "匯率是什麼意思？", a: ["兌換其他貨幣的比率", "匯錢時的手續費", "存錢在銀行得到的利息", "跟我沒有關係"], c: 0 },
-        { cat: 2, q: "新台幣兌日幣的匯率以前是 1:4（1元台幣換4日幣），現在變成 1:5（1元台幣換5日幣），這表示？", a: ["新台幣升值，拿新台幣可以買到更多日幣商品", "新台幣貶值，拿新台幣可以買到更多日幣商品", "新台幣升值，拿新台幣買到的日幣商品變少了", "新台幣貶值，拿新台幣買到的日幣商品變少了"], c: 0 },
+        { cat: 2, q: "一個店內販售的商品如蛋糕，定價不用考慮的是什麼？", a: ["成本", "在消費者心中的價值", "看老闆的心情", "店面租金"], c: 2, diff: 'hard' },
+        { cat: 2, q: "販售商品的成本是什麼意思，例如蛋糕，以下哪個不是製作蛋糕的成本？", a: ["糖的＄", "蛋的＄", "請蛋糕師傅做的薪水", "售價"], c: 3, diff: 'hard' },
+        { cat: 2, q: "銀行的業務不包含下列哪一項？", a: ["貸款（借錢）", "存款（存錢）", "賣盤子", "匯款"], c: 2, diff: 'easy' },
+        { cat: 2, q: "有關信用卡的敘述哪個是錯的？", a: ["刷卡買東西下個月要還錢", "每次繳卡費的時候繳最低金額就可以了", "刷卡其實是在借下個月的錢來用", "使用信用卡有不用帶太多現金的優點"], c: 1, diff: 'hard' },
+        { cat: 2, q: "跟爸爸銀行借 1000 元，月利息 10%。第一個月不還變 1100 元，第二個月變多少？", a: ["1100 元", "1210 元", "1500 元", "1000 元"], c: 1, diff: 'hard' },
+        { cat: 2, q: "跟爸爸銀行借 1000 元，月利息 10%。第一個月不還變 1100 元，第二個月變1210元，如果到了『第三個月』還是賴皮不還錢，總共要還多少錢？", a: ["1300 元", "1331 元", "1100 元", "1210 元"], c: 1, diff: 'hard' },
+        { cat: 2, q: "什麼叫『利滾利』？", a: ["錢越來越少", "利息也會生利息", "錢變不見", "小白打滾"], c: 1, diff: 'mid' },
+        { cat: 2, q: "存錢時的利率是什麼意思？", a: ["讓錢變多的加速蘑菇", "偷走金幣的食人花", "讓速度變慢的香蕉皮", "暫時無敵的星星"], c: 0, diff: 'mid' },
+        { cat: 2, q: "我想買的玩具有200元，但是不夠錢，我跟媽媽一個月繳50元，分4個月繳完叫做？", a: ["利息", "利率", "分期付款", "股票"], c: 2, diff: 'mid' },
+        { cat: 2, q: "我的零用錢有200元，我想要的戰鬥陀螺也是200元，寶可夢娃娃也是200元，我只能選擇一個，另一個就不能得到，這叫做？", a: ["利息", "利率", "銀行", "機會成本"], c: 3, diff: 'hard' },
+        { cat: 2, q: "繳信用卡費的時候怎麼做比較好？", a: ["要全部繳清，因為循環利息利滾利之後要還的錢很多", "過期不繳不會怎麼樣", "我想繳再繳就好", "只繳最低金額其他後面再繳就好"], c: 0, diff: 'easy' },
+        { cat: 2, q: "在現實生活中，「金錢」最主要的意義是什麼？", a: ["一種交換工具，可以用勞力或時間換來，並用來購買需要的東西", "一種魔法藥水，只要喝下去就能變得長生不老", "一種裝飾品，只能用來貼在牆上讓房間變得亮晶晶", "一種玩具，只有在玩大富翁遊戲時才有用，現實中不能用"], c: 0, diff: 'easy' },
+        { cat: 2, q: "金錢可以用來買什麼，哪一個是錯的？", a: ["買想要的東西", "買別人的時間", "買別人的服務", "回到健康"], c: 3, diff: 'easy' },
+        { cat: 2, q: "匯率是什麼意思？", a: ["兌換其他貨幣的比率", "匯錢時的手續費", "存錢在銀行得到的利息", "跟我沒有關係"], c: 0, diff: 'mid' },
+        { cat: 2, q: "新台幣兌日幣的匯率以前是 1:4（1元台幣換4日幣），現在變成 1:5（1元台幣換5日幣），這表示？", a: ["新台幣升值，拿新台幣可以買到更多日幣商品", "新台幣貶值，拿新台幣可以買到更多日幣商品", "新台幣升值，拿新台幣買到的日幣商品變少了", "新台幣貶值，拿新台幣買到的日幣商品變少了"], c: 0, diff: 'mid' },
 
         // --- 【類別 3：資產 vs 負債】 ---
-        { cat: 3, q: "買入一種金融商品，它會幫你生錢／賺錢的，這是？", a: ["資產", "負債", "垃圾", "負擔"], c: 0 },
-        { cat: 3, q: "買了一台每個月都要換電池的遙控車，這台車是？", a: ["資產", "負債", "收藏品", "投資"], c: 1 },
-        { cat: 3, q: "會隨著時間增加價值，或是能幫你賺進更多錢的房子、股票，通常被稱為？", a: ["消費品", "資產", "負債", "禮物"], c: 1 },
-        { cat: 3, q: "讓你必須不斷付錢給別人，而且付出的代價比它帶來的價值還要多的東西？", a: ["資產", "負債", "好東西", "零食"], c: 1 },
-        { cat: 3, q: "存錢在銀行收利息(通貨膨脹>利息)，這筆存款是你的？", a: ["資產", "負債", "負擔", "魔法"], c: 1 }, // 修正為資產(A)
+        { cat: 3, q: "買入一種金融商品，它會幫你生錢／賺錢的，這是？", a: ["資產", "負債", "垃圾", "負擔"], c: 0, diff: 'hard' },
+        { cat: 3, q: "買了一台每個月都要換電池的遙控車，這台車是？", a: ["資產", "負債", "收藏品", "投資"], c: 1, diff: 'mid' },
+        { cat: 3, q: "會隨著時間增加價值，或是能幫你賺進更多錢的房子、股票，通常被稱為？", a: ["消費品", "資產", "負債", "禮物"], c: 1, diff: 'mid' },
+        { cat: 3, q: "讓你必須不斷付錢給別人，而且付出的代價比它帶來的價值還要多的東西？", a: ["資產", "負債", "好東西", "零食"], c: 1, diff: 'easy' },
+        { cat: 3, q: "存錢在銀行收利息，如果當時『通貨膨脹』的速度比利息還要快，這筆存款會縮水，此時它算是？", a: ["幫你賺大錢的強大資產", "悄悄讓你虧錢的隱形負債", "穩賺不賠的無敵星星", "沒影響的遊戲幣"], c: 1, diff: 'easy' },
 
         // --- 【類別 4：需要 vs 想要】 ---
-        { cat: 4, q: "口渴時買的白開水，是屬於？", a: ["想要", "需要", "投資", "浪費"], c: 1 },
-        { cat: 4, q: "同學都有最新款的貼紙，你也想買，這是？", a: ["想要", "需要", "必要的", "資產"], c: 0 },
-        { cat: 4, q: "每天必須吃的營養午餐，是？", a: ["想要", "需要", "多餘的", "負債"], c: 1 },
-        { cat: 4, q: "零用錢有限時，應該先買哪個？", a: ["想要的", "需要的", "隨便買", "最貴的"], c: 1 },
-        { cat: 4, q: "存錢存很久才買的夢想禮物，這叫？", a: ["立即享樂", "延遲享樂", "浪費錢", "沒意義"], c: 1 },
+        { cat: 4, q: "口渴時買的白開水，是屬於？", a: ["想要", "需要", "投資", "浪費"], c: 1, diff: 'easy' },
+        { cat: 4, q: "同學都有最新款的貼紙，你也想買，這是？", a: ["想要", "需要", "必要的", "資產"], c: 0, diff: 'easy' },
+        { cat: 4, q: "每天必須吃的營養午餐，是？", a: ["想要", "需要", "多餘的", "負債"], c: 1, diff: 'easy' },
+        { cat: 4, q: "零用錢有限時，應該先買哪個？", a: ["想要的", "需要的", "隨便買", "最貴的"], c: 1, diff: 'mid' },
+        { cat: 4, q: "存錢存很久才買的夢想禮物，這叫？", a: ["立即享樂", "延遲享樂", "浪費錢", "沒意義"], c: 1, diff: 'hard' },
 
         // --- 【類別 5：反詐騙認知】 ---
-        { cat: 5, q: "有人說『穩賺不賠、馬上匯錢』，這是什麼？", a: ["魔法", "詐騙", "好心", "機會"], c: 1 },
-        { cat: 5, q: "接到陌生電話說爸爸出事了要你匯錢救他，該怎麼辦？", a: ["快點給他錢", "給他密碼", "掛掉並找爸媽確認", "罵他"], c: 2 },
-        { cat: 5, q: "好朋友在網路上跟你說他發生什麼事好可憐希望你借錢給他？", a: ["一種遊戲", "詐騙要馬上封鎖", "運氣不好", "賺錢的方法"], c: 1 },
-        { cat: 5, q: "網路遊戲有人要跟你換帳號密碼，說要送你神裝？", a: ["趕快換", "是詐騙，不要給", "他人很好", "試試看"], c: 1 },
-        { cat: 5, q: "天上掉下來的白吃午餐（免費拿大錢），通常是？", a: ["幸運", "詐騙陷阱", "真正的禮物", "魔法"], c: 1 },
+        { cat: 5, q: "有人說『穩賺不賠、馬上匯錢』，這是什麼？", a: ["魔法", "詐騙", "好心", "機會"], c: 1, diff: 'hard' },
+        { cat: 5, q: "接到陌生電話說爸爸出事了要你匯錢救他，該怎麼辦？", a: ["快點給他錢", "給下個月的錢", "掛掉並找爸媽確認", "罵他"], c: 2, diff: 'mid' },
+        { cat: 5, q: "好朋友在網路上跟你說他發生什麼事好可憐希望你借錢給他？", a: ["一種遊戲", "通常是詐騙或帳號被偷，要馬上跟本人確認", "運氣不好", "賺錢的方法"], c: 1, diff: 'easy' },
+        { cat: 5, q: "網路遊戲有人要跟你換帳號密碼，說要送你神裝？", a: ["趕快換", "是詐騙，絕對不能給", "他人很好", "試試看"], c: 1, diff: 'easy' },
+        { cat: 5, q: "天上掉下來的白吃午餐（免費拿大錢），通常是？", a: ["幸運", "詐騙陷阱", "真正的禮物", "魔法"], c: 1, diff: 'mid' },
 
         // --- 【類別 6：基本物價體感與通膨】 ---
-        { cat: 6, q: "現在便利商店的一顆茶葉蛋，大約是多少錢？", a: ["1 元", "10 元", "50 元", "100 元"], c: 1 },
-        { cat: 6, q: "一瓶家庭號大鮮奶大約要多少金幣？", a: ["50 元", "160-200 元", "1000 元", "5 元"], c: 1 },
-        { cat: 6, q: "為什麼以前茶葉蛋只要 8 元現在要 10 元？", a: ["蛋變大了", "通膨(東西變貴)", "老闆心情好", "沒變"], c: 1 },
-        { cat: 6, q: "買麥當勞套餐大約要花多少？", a: ["10 元", "100-150 元", "1000 元", "5 元"], c: 1 },
-        { cat: 6, q: "如果錢包有100元，茶葉蛋10元，你可以買幾顆？", a: ["5 顆", "10 顆", "1 顆", "100 顆"], c: 1 },
-        { cat: 6, q: "在不同地方買同樣的水價格不同，這叫？", a: ["被騙", "環境與方便的價值", "魔法", "沒差別"], c: 1 }
+        { cat: 6, q: "現在便利商店的一顆茶葉蛋，大約是多少錢？", a: ["1 元", "10 元", "50 元", "100 元"], c: 1, diff: 'easy' },
+        { cat: 6, q: "一瓶家庭號大鮮奶大約要多少金幣？", a: ["50 元", "160-200 元", "1000 元", "5 元"], c: 1, diff: 'mid' },
+        { cat: 6, q: "為什麼以前茶葉蛋只要 8 元現在要 10 元？", a: ["蛋變大了", "通膨(東西變貴)", "老闆心情好", "沒變"], c: 1, diff: 'hard' },
+        { cat: 6, q: "買麥當勞套餐大約要花多少？", a: ["10 元", "100-150 元", "1000 元", "5 元"], c: 1, diff: 'mid' },
+        { cat: 6, q: "如果錢包有100元，茶葉蛋10元，你可以買幾顆？", a: ["5 顆", "10 顆", "1 顆", "100 顆"], c: 1, diff: 'easy' },
+        { cat: 6, q: "在不同地方買同樣的水價格不同，這叫？", a: ["被騙", "環境與方便的價值", "魔法", "沒差別"], c: 1, diff: 'hard' }
     ];
 
-    let state = { coins: 0, combo: 0, maxCombo: 0, qIdx: 0, quizSet: [], isLock: false, totalQs: 15, passingScore: 500, passingCombo: 5 };
+    let state = { 
+        coins: 0, combo: 0, maxCombo: 0, qIdx: 0, quizSet: [], isLock: false, 
+        totalQs: 18, passingScore: 100, passingCombo: 3, wrongAnswers: [] 
+    };
 
     function getRandomQuestions(catNum, count) {
         const filtered = questionBank.filter(q => q.cat === catNum);
@@ -166,31 +185,30 @@
         coinPlayer.playVideo();
         setTimeout(() => { coinPlayer.pauseVideo(); }, 100);
 
-        mushroomSfx.play().catch(e => console.log("Audio unlock failed, waiting for user interaction."));
+        mushroomSfx.play().catch(e => console.log("Audio unlock failed."));
         setTimeout(() => { mushroomSfx.pause(); }, 50);
 
         document.getElementById('video-overlay').style.display = 'none';
         document.getElementById('dashboard').style.display = 'flex';
         document.getElementById('quiz-box').style.display = 'block';
-        document.getElementById('mario-hero').style.display = 'block';
         startGame();
     }
 
     function startGame() {
-        state.coins = 0; state.combo = 0; state.maxCombo = 0; state.qIdx = 0;
+        state.coins = 0; state.combo = 0; state.maxCombo = 0; state.qIdx = 0; state.wrongAnswers = [];
         
-        // 分區抽題：類別2抽5題，其餘各2題，共15題
+        // 分配難度與類別：Easy 提升至 4 題，總共 18 題
         let selectedQs = [
-            ...getRandomQuestions(1, 2),
-            ...getRandomQuestions(2, 5),
-            ...getRandomQuestions(3, 2),
-            ...getRandomQuestions(4, 2),
-            ...getRandomQuestions(5, 2),
-            ...getRandomQuestions(6, 2)
+            ...getRandomQuestions(1, 2), // 腦力價值 (2題)
+            ...getRandomQuestions(2, 6), // 銀行利息利率 (6題)
+            ...getRandomQuestions(3, 3), // 資產負債 (3題)
+            ...getRandomQuestions(4, 2), // 需要想要 (2題)
+            ...getRandomQuestions(5, 2), // 反詐騙 (2題)
+            ...getRandomQuestions(6, 3)  // 物價體感 (3題，內含 Easy 題型)
         ];
         
-        // 打亂總題庫順序
-        state.quizSet = selectedQs.sort(() => 0.5 - Math.random());
+        state.quizSet = selectedQs.sort(() => 0.5 - Math.random()).slice(0, state.totalQs);
+        updateUI();
         renderQuestion();
     }
 
@@ -217,23 +235,27 @@
         state.isLock = true;
         const data = state.quizSet[state.qIdx];
         const resultBox = document.getElementById('result-box');
+        const mario = document.getElementById('mario-hero');
         resultBox.style.display = 'block';
 
         if (idx === data.c) {
             state.combo++;
             if (state.combo > state.maxCombo) state.maxCombo = state.combo;
             
-            let points = 50;
-            let msg = "答對了！+50";
+            // 基礎計分策略
+            let basePoints = data.diff === 'hard' ? 15 : (data.diff === 'mid' ? 10 : 5);
+            let finalPoints = basePoints;
+            let msg = `答對了！+${basePoints}`;
             
-            if (state.combo >= 3) {
-                let bonus = (state.combo - 2) * 20;
-                points += bonus;
-                msg = `🍄 蘑菇加速！連續 ${state.combo} 題正確！+${points}`;
-                try {
-                    mushroomSfx.currentTime = 0;
-                    mushroomSfx.play();
-                } catch(e){}
+            // 新 Combo 加乘策略
+            if (state.combo >= 5) {
+                finalPoints = Math.floor(basePoints * 2.0);
+                msg = `⚡ 星星無敵狀態！連續 ${state.combo} 題正確！+${finalPoints} (2倍加加乘！)`;
+                playMushroomSFX();
+            } else if (state.combo >= 3) {
+                finalPoints = Math.floor(basePoints * 1.5);
+                msg = `🍄 蘑菇加速衝刺！連續 ${state.combo} 題正確！+${finalPoints} (1.5倍加乘)`;
+                playMushroomSFX();
             } else {
                 try {
                     coinPlayer.seekTo(0);
@@ -241,21 +263,42 @@
                 } catch(e){}
             }
             
-            state.coins += points;
+            state.coins += finalPoints;
             resultBox.innerText = msg;
-            resultBox.style.color = "green";
+            resultBox.style.backgroundColor = "#e6fffa";
+            resultBox.style.color = "#234e52";
+            mario.style.transform = 'translateX(-50%) scale(1.15)';
             
         } else {
+            // 答錯重罰與切斷連擊
             state.combo = 0;
-            state.coins -= 20;
-            resultBox.innerText = "撞到香蕉皮了！-20，連擊中斷。";
-            resultBox.style.color = "red";
+            state.coins -= 15; 
+            resultBox.innerText = `💥 撞到香蕉皮了！重罰倒扣 15 分，連擊切斷！`;
+            resultBox.style.backgroundColor = "#fff5f5";
+            resultBox.style.color = "#9b2c2c";
+            
+            // 紀錄錯題，供最後列表使用
+            state.wrongAnswers.push({
+                q: data.q,
+                userAns: data.a[idx],
+                correctAns: data.a[data.c]
+            });
+
+            mario.style.transform = 'translateX(-50%) rotate(360deg)';
         }
 
         updateUI();
         setTimeout(() => {
+            mario.style.transform = 'translateX(-50%) scale(1)';
             state.qIdx++; state.isLock = false; renderQuestion();
-        }, 1500);
+        }, 1600);
+    }
+
+    function playMushroomSFX() {
+        try {
+            mushroomSfx.currentTime = 0;
+            mushroomSfx.play();
+        } catch(e){}
     }
 
     function updateUI() {
@@ -272,30 +315,60 @@
     }
 
     function finish() {
+        // 同時達成兩項門檻才算及格過關
         const passed = (state.coins >= state.passingScore && state.maxCombo >= state.passingCombo);
         
-        let title = passed ? "🎉 恭喜考取理財駕照！ 🎉" : "💥 挑戰失敗，還差一點喔！ 💥";
-        let reason = "";
-        
-        if (!passed) {
-            if (state.coins < state.passingScore && state.maxCombo < state.passingCombo) {
-                reason = `(金幣未達 ${state.passingScore} 且 連擊未達 ${state.passingCombo})`;
-            } else if (state.coins < state.passingScore) {
-                reason = `(總金幣未達標，需 ${state.passingScore} 金幣)`;
-            } else {
-                reason = `(連擊未達標，需連續答對 ${state.passingCombo} 題)`;
-            }
+        let headerHtml = "";
+        if (passed) {
+            headerHtml = `
+                <div class="license-card">
+                    <div class="license-title">🏆 黃金理財特級駕照 🏆</div>
+                    <p style="font-size: 16px; margin: 5px 0; color:#555;">恭喜通過 100CC 硬核拉力考驗</p>
+                    <p style="font-size: 20px; font-weight: bold; color: green; margin: 10px 0;">🎉 准予每週全額領取 140 元零用錢！</p>
+                </div>
+            `;
+        } else {
+            let reason = [];
+            if (state.coins < state.passingScore) reason.push(`總分未滿 ${state.passingScore} 分 (目前 ${state.coins} 分)`);
+            if (state.maxCombo < state.passingCombo) reason.push(`最高連擊未滿 ${state.passingCombo} 題 (目前 ${state.maxCombo} 題)`);
+            
+            headerHtml = `
+                <div class="license-card" style="background:#fff5f5; border-color:#e53e3e;">
+                    <div class="license-title" style="color:#e53e3e;">❌ 考照不合格 (庫巴攔截)</div>
+                    <p style="font-size: 16px; margin: 5px 0; color:#718096;">未能完全掌握核心概念，再加把勁！</p>
+                    <p style="font-size: 14px; font-weight: bold; color: #c53030; margin: 10px 0;">未達標原因：<br>${reason.join('<br>')}</p>
+                </div>
+            `;
+        }
+
+        // 建立錯題列表 HTML
+        let wrongListHtml = "";
+        if (state.wrongAnswers.length > 0) {
+            wrongListHtml += `<div class="wrong-report"><h3>📋 拉力賽錯題檢討清單：</h3>`;
+            state.wrongAnswers.forEach((item, index) => {
+                wrongListHtml += `
+                    <div class="wrong-item">
+                        <strong>❌ 錯題 ${index + 1}：</strong>${item.q}<br>
+                        &nbsp;&nbsp;• 你的回答：<span style="color:#c53030;">${item.userAns}</span><br>
+                        &nbsp;&nbsp;• 正確答案：<span>${item.correctAns}</span>
+                    </div>
+                `;
+            });
+            wrongListHtml += `</div>`;
+        } else {
+            wrongListHtml += `<div class="wrong-report" style="background:#f0fff4; border-color:#9ae6b4; color:#276749; text-align:center; font-weight:bold;">🌟 太完美了！本次拉力賽零失誤，全部正確！</div>`;
         }
 
         document.getElementById('question-text').innerHTML = `
-            <span style="color:${passed ? 'green' : 'red'}; font-size: 28px;">${title}</span><br><br>
-            最終金幣：${state.coins}<br>
-            最高連續答對：${state.maxCombo} 題<br>
-            <span style="font-size: 16px; color: gray;">${reason}</span>
+            ${headerHtml}
+            <div style="font-size:18px; font-weight:bold; background:#edf2f7; padding:10px; border-radius:10px; margin-top:10px;">
+                🏎️ 最終賽道戰報：總得分 ${state.coins} 分 / 最高連擊數 ${state.maxCombo} 題
+            </div>
+            ${wrongListHtml}
         `;
         
         document.getElementById('options-container').innerHTML = `
-            <button class="option-btn" style="background:#E52521;" onclick="location.reload()">再玩一次</button>
+            <button class="option-btn" style="background:var(--mario-green); box-shadow: 0 6px 0 #2b6c33;" onclick="location.reload()">重新挑戰賽道</button>
         `;
         document.getElementById('result-box').style.display = 'none';
     }
